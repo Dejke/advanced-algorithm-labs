@@ -146,7 +146,7 @@ def calculate(N, iterations, markingfunction):
         tree_copy = copy.deepcopy(tree)
         lst.append(markingfunction(tree_copy))
     mean = sum(lst) / len(lst)
-    print("The mean is :", mean)
+    #print("The mean is :", mean)
     std = (sum([(x - mean) ** 2 for x in lst]) / len(lst)) ** 0.5
     
     return mean, std
@@ -160,26 +160,27 @@ def generate_table(samples = 1, max_power = 20):
     try: 
         import pandas as pd 
         N = [2**power-1 for power in range(2,max_power)]
-        funcs = [R1,R2,R3]
+        funcs = [marking1,marking2,marking3]
 
-        results = pd.DataFrame()
+        results = []
         for n in N:
             row  = []
-            for func in funcs:
-                print(f'N{n}')
-                row.append(calculate(n, samples, func))
-            results.append(row)
+            for markingfunction in funcs:
+#                print(f'N{n}')
+                mean,std = calculate(n, samples, markingfunction)
+                
+            results.append([f'{mean} \\pm {std}' for mean, std in row])
             print(row)
-        print(results)
+        print(pd.DataFrame(results))
     except ModuleNotFoundError: 
         print("error: can't generate table without pandas package (pip install pandas)")
 
 if __name__ == "__main__":
-#    generate_table(max_power=4)
+    generate_table(samples=10, max_power=4)
     
-    mean, std = calculate(1023, 10, marking1)   
-    print("The mean is :", mean)
-    print("The standard deviation is:", std)
+#    mean, std = calculate(1023, 10, marking1)   
+#    print("The mean is :", mean)
+#    print("The standard deviation is:", std)
     
 
 
