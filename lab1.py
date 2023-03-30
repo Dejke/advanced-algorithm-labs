@@ -151,7 +151,16 @@ def calculate(N, iterations, markingfunction):
     
     return mean, std
 
-def generate_table(samples = 1, max_power = 20):
+def scientific_notation(mean, stdev):
+    exponent = int(np.log10(mean))
+    mean /= 10**exponent
+    stdev /= 10**exponent
+    if exponent == 0:
+        return f'${mean:.1f} \\pm {stdev:.1f}$'
+    else:
+        return f'${mean:.1f} \\pm {stdev:.1f} \\times 10^{exponent}$'
+    
+def generate_table(samples = 1, max_power = 20, latex = True):
     """Run all the experiments, and generate a latex table"""
     def emptystring(*args):
         return ""
@@ -159,24 +168,32 @@ def generate_table(samples = 1, max_power = 20):
 
     try: 
         import pandas as pd 
+        import tqdm as tqdm
         N = [2**power-1 for power in range(2,max_power)]
         funcs = [marking1,marking2,marking3]
 
         results = []
-        for n in N:
-            row  = []
+        for n in tqdm.tqdm(N):
+            row  = [str(n)]
             for markingfunction in funcs:
-#                print(f'N{n}')
                 mean,std = calculate(n, samples, markingfunction)
-                
-            results.append([f'{mean} \\pm {std}' for mean, std in row])
-            print(row)
-        print(pd.DataFrame(results))
+                row.append(scientific_notation(mean,std))
+            row.append("")
+            results.append(row)
+        
+        df = pd.DataFrame(results)
+
+        df = df.set_axis(["N", "R1","R2","R3", "E[R1]"], axis=1)#.join(pd.DataFrame({'E[R1]',["" for _ in N]}))
+
+        if latex:
+            print(df.to_latex(escape = False, index = False))
+        else:
+            print(df)
     except ModuleNotFoundError: 
-        print("error: can't generate table without pandas package (pip install pandas)")
+        print("error: can't generate table without pandas & tqdm packages")
 
 if __name__ == "__main__":
-    generate_table(samples=10, max_power=4)
+    generate_table(samples=10, max_power=20, latex = True)
     
 #    mean, std = calculate(1023, 10, marking1)   
 #    print("The mean is :", mean)
