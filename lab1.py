@@ -42,15 +42,18 @@ def rec_rules(tree, index, is_initial_call = False):
     if is_nonleaf(node): # First rule can't apply to leaf nodes
         left_child = tree[node["left_child"]-1]
         right_child = tree[node["right_child"]-1]
+        #print("checking rule")
         if left_child["marked"] and right_child["marked"]: #First rule
+         #   print("applying rule 1")
             should_mark = True
     if is_nonroot(node): # Second rule can't apply to root node
         parent = tree[node["parent"]-1]
         sibling = tree[node["sibling"]-1]
+        #print("checking rule")
         if parent["marked"] and sibling["marked"]:  #Second rule
+         #   print("applying rule 2")
             should_mark = True
-
-
+    
     if should_mark: 
         marked = 1 
         node["marked"] = True
@@ -60,36 +63,11 @@ def rec_rules(tree, index, is_initial_call = False):
     else: 
         return 0   
         
-def apply_rules(tree, idx):
-    marked = 0
-    while True:
-        did_mark = False
-
-        for node in tree:
-            if is_nonleaf(node):
-                left_child = tree[node["left_child"]-1]
-                right_child = tree[node["right_child"]-1]
-            if is_nonroot(node):
-                parent = tree[node["parent"]-1]
-                sibling = tree[node["sibling"]-1]
-            if is_nonleaf(node) and left_child["marked"] and right_child["marked"] and not node["marked"]:
-                idx =mark_node(node,idx)
-                marked+=1
-                did_mark = True
-            elif is_nonroot(node) and parent["marked"] and sibling["marked"]and not node["marked"]:
-                idx =mark_node(node,idx)
-                did_mark = True
-                marked+=1
-        if not did_mark:
-            break
-    #print(marked)
-    return idx
-
 def R1(N):
     return random.randint(0, N-1)
 
 def R2(N):
-    l=[i for i in range(0,N-1)]
+    l = [i for i in range(0,N-1)]
     random.shuffle(l)
     return l
 
@@ -120,17 +98,27 @@ def build_tree(N):
             tree[j]["sibling"] = sibling_index
     return tree
 
-
-
-def marking (tree):
+def marking1(tree):
     N=len(tree)
     counter = 0
-    #idx=0
     marked = 0
     while marked<N:
         index = R1(N)
         counter += 1
-        marked = mark_node(tree[index], marked)
+        marked += rec_rules(tree, index, is_initial_call = True)
+
+    return(counter)
+
+
+def marking2(tree):
+    N=len(tree)
+    counter = 0
+    marked=0
+    r2_l = R2(N)
+    #print(r2_l)
+    while marked<N:
+        index = r2_l[counter]
+        counter += 1
         marked += rec_rules(tree, index, is_initial_call = True)
 
     return(counter)
@@ -138,52 +126,61 @@ def marking (tree):
 def marking3(tree):
     N=len(tree)
     counter = 0
-    #idx=0
     marked = 0
     while marked<N:
         index = R3(N, tree)
         counter += 1
-        marked = mark_node(tree[index], marked)
-        marked += apply_rules(tree, index, is_initial_call = True)
-    #print(counter)
+        marked += rec_rules(tree, index, is_initial_call = True)
 
     return(counter)
 
-def calculateR1(N, iterations): 
+def calculate(N, iterations, markingfunction): 
+    """ Run the algorithm (iterations) times, and calculate mean & standard deviation of results
+        N is size of tree
+        R is sampling function
+    """
+
     tree = build_tree(N)
     lst=[]
     for i in range (iterations):
         tree_copy = copy.deepcopy(tree)
-        lst.append(marking(tree_copy))
+        lst.append(markingfunction(tree_copy))
     mean = sum(lst) / len(lst)
     print("The mean is :", mean)
     std = (sum([(x - mean) ** 2 for x in lst]) / len(lst)) ** 0.5
-    std = np.std(np.array(lst))
-    print("The standard deviation is :", std)
+    
+    return mean, std
 
-def calculateR3(N, iterations):
-    tree = build_tree(N)
-    lst=[]
-    for i in range (iterations):
-        tree_copy = copy.deepcopy(tree)
-        lst.append(marking3(tree_copy))
-    mean = sum(lst) / len(lst)
+def generate_table(samples = 1, max_power = 20):
+    """Run all the experiments, and generate a latex table"""
+    def emptystring(*args):
+        return ""
+    
+
+    try: 
+        import pandas as pd 
+        N = [2**power-1 for power in range(2,max_power)]
+        funcs = [R1,R2,R3]
+
+        results = pd.DataFrame()
+        for n in N:
+            row  = []
+            for func in funcs:
+                print(f'N{n}')
+                row.append(calculate(n, samples, func))
+            results.append(row)
+            print(row)
+        print(results)
+    except ModuleNotFoundError: 
+        print("error: can't generate table without pandas package (pip install pandas)")
+
+if __name__ == "__main__":
+#    generate_table(max_power=4)
+    
+    mean, std = calculate(1023, 10, marking1)   
     print("The mean is :", mean)
-    std = (sum([(x - mean) ** 2 for x in lst]) / len(lst)) ** 0.5
-    std = np.std(np.array(lst))
-    print("The standard deviation is :", std)
-#calculateR1(3,10)
-
-ex_tree = build_tree(1023)
-#print(ex_tree)
-#print (ex_tree[0]['sibling'])
-#marking(ex_tree)
-
-#print(random.randint(1, 2))
-#calculateR1(1_048_575, 20)
-calculateR1(1023, 100)
-
-#apply_rules(ex_tree,0)
+    print("The standard deviation is:", std)
+    
 
 
 
