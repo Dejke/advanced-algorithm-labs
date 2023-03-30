@@ -2,6 +2,35 @@ import random
 import copy
 import numpy as np
 
+def rec_mark_node(node, tree):
+    """Mark the node. If a rule applies to any neighbor, update them too"""
+
+    if node["marked"]:
+        return 0
+    
+    node["marked"] = True
+    counter = 1
+
+    
+    if is_nonleaf(node):
+        
+        left_child = tree[node["left_child"]-1]
+        right_child = tree[node["right_child"]-1]
+
+        if left_child["marked"] != right_child["marked"]:
+            counter += rec_mark_node(left_child, tree)
+            counter += rec_mark_node(right_child, tree)
+
+    if is_nonroot(node):
+        parent = tree[node["parent"]-1]
+        sibling = tree[node["sibling"]-1]
+
+        if parent["marked"] != sibling["marked"]:
+            counter += rec_mark_node(parent, tree)
+            counter += rec_mark_node(sibling, tree)
+    
+    return counter
+
 def mark_node(node, idx):
     if not node["marked"]:
         node["marked"] = True
@@ -105,7 +134,7 @@ def marking1(tree):
     while marked<N:
         index = R1(N)
         counter += 1
-        marked += rec_rules(tree, index, is_initial_call = True)
+        marked += rec_mark_node(tree[index], tree)
 
     return(counter)
 
@@ -119,7 +148,7 @@ def marking2(tree):
     while marked<N:
         index = r2_l[counter]
         counter += 1
-        marked += rec_rules(tree, index, is_initial_call = True)
+        marked += rec_mark_node(tree[index], tree)
 
     return(counter)
 
@@ -130,7 +159,7 @@ def marking3(tree):
     while marked<N:
         index = R3(N, tree)
         counter += 1
-        marked += rec_rules(tree, index, is_initial_call = True)
+        marked += rec_mark_node(tree[index], tree)
 
     return(counter)
 
@@ -194,11 +223,9 @@ def generate_table(samples = 1, max_power = 20, latex = True):
 
 if __name__ == "__main__":
     generate_table(samples=10, max_power=20, latex = True)
-    
-#    mean, std = calculate(1023, 10, marking1)   
-#    print("The mean is :", mean)
-#    print("The standard deviation is:", std)
-    
+
+    #mean, std = calculate(1023, 1, marking1)   
+    #print(scientific_notation(mean,std))
 
 
 
