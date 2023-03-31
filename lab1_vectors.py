@@ -71,11 +71,13 @@ def R3():
 def marking1():
     counter = 0
     marked = 0
+
+    index = 0
     while marked<N:
         index = R1()
         counter += 1
         marked += rec_mark_node(index)
-
+    #print(f'LAST MARKED NODE {is_leaf(index)}')
     return(counter)
 
 
@@ -128,14 +130,33 @@ def calculate(treesize, iterations, markingfunction):
     
     return mean, std
 
+
+
 def scientific_notation(mean, stdev):
-    exponent = int(np.log10(mean))
-    mean /= 10**exponent
-    stdev /= 10**exponent
-    if exponent == 0:
-        return f'${mean:.1f} \\pm {stdev:.1f}$'
+    
+    stdexp = np.Infinity
+    if stdev != 0:
+        # Round both to same sigfig
+        stdexp = int(np.log10(stdev))
+        mean = np.round(mean / 10**stdexp) * 10**stdexp
+        stdev = np.round(stdev / 10**stdexp) * 10**stdexp
+
+    #scientific notation
+    meanexp = int(np.log10(mean))
+    mean /= 10**meanexp
+    stdev /= 10**meanexp
+
+    stdev = f'{stdev:.1g}'
+
+    precision = 2 if stdev == 0 else len(stdev.split('.')[0])
+    
+    mean = f'{mean:.{precision}f}'   
+        
+#    return f'{mean} plusminus {stdev} * 10^{meanexp}'
+    if meanexp == 0:
+        return f'${mean} \\pm {stdev}$'
     else:
-        return f'${mean:.1f} \\pm {stdev:.1f} \\times 10^{exponent}$'
+        return f'${mean} \\pm {stdev} \\times 10^{meanexp}$'
     
 def generate_table(samples = 1, max_power = 20, latex = True):
     """Run all the experiments, and generate a latex table"""
@@ -151,7 +172,11 @@ def generate_table(samples = 1, max_power = 20, latex = True):
             for markingfunction in funcs:
                 mean,std = calculate(n, samples, markingfunction)
                 row.append(scientific_notation(mean,std))
-            row.append("")
+
+            ER1 = (n+1)/2 * np.log((n+1) / 4) + np.euler_gamma * (n+1) / 2
+            exponent = int(np.log10(ER1))
+            ER1 /= 10**exponent
+            row.append(f'${ER1:.1f} \\times 10^{exponent}$')
             results.append(row)
         
         df = pd.DataFrame(results)
@@ -166,11 +191,12 @@ def generate_table(samples = 1, max_power = 20, latex = True):
         print("error: can't generate table without pandas & tqdm packages")
 
 if __name__ == "__main__":
-    generate_table(samples=10, max_power=15, latex = True)
+    generate_table(samples=10, max_power=20, latex = True)
 
-    #print(calculate(7, 1, marking3))
-    # mean, std = calculate(1023, 1, marking1)   
-    # print(scientific_notation(mean,std))
+    #print(calculate(1023, 1000, marking1))
+    #mean, std = calculate(1023, 10, marking1)   
+    #print(mean,std)
+    #print(scientific_notation(mean,std))
 
 
 
