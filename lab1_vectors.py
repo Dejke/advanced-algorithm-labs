@@ -146,17 +146,20 @@ def scientific_notation(mean, stdev):
     mean /= 10**meanexp
     stdev /= 10**meanexp
 
-    stdev = f'{stdev:.1g}'
+    precision = 2
+    if stdev != 0:
+        precision = len(f'{stdev:.1g}')-2
+        if precision <= 0:
+            precision = 0
 
-    precision = 2 if stdev == 0 else len(stdev.split('.')[0])
-    
+    #print(precision)
     mean = f'{mean:.{precision}f}'   
         
 #    return f'{mean} plusminus {stdev} * 10^{meanexp}'
     if meanexp == 0:
-        return f'${mean} \\pm {stdev}$'
+        return f'${mean} \\pm {stdev:.1g}$'
     else:
-        return f'${mean} \\pm {stdev} \\times 10^{meanexp}$'
+        return f'${mean} \\pm {stdev:.1g} \\times 10^{meanexp}$'
     
 def generate_table(samples = 1, max_power = 20, latex = True):
     """Run all the experiments, and generate a latex table"""
