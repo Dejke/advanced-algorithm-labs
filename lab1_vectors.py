@@ -29,6 +29,8 @@ def right_child (index):
 def rec_mark_node(index):
     """Mark the node. If a rule applies to any neighbor, update them too"""
     
+    if treevec[index]:
+        return 0
     treevec[index] = True
     counter = 1
 
@@ -164,7 +166,7 @@ def generate_table(samples = 1, max_power = 20, latex = True):
         print("error: can't generate table without pandas & tqdm packages")
 
 if __name__ == "__main__":
-    generate_table(samples=10, max_power=20, latex = True)
+    generate_table(samples=10, max_power=15, latex = True)
 
     #print(calculate(7, 1, marking3))
     # mean, std = calculate(1023, 1, marking1)   
