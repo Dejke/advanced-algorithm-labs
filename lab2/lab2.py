@@ -111,20 +111,33 @@ def independent_set():
     pass
 
 #t is tree of nodes, bags is node contents, node is current node in tree
-def rec_calc_c(t, bags, node):
+def rec_calc_c(t, S, bags, node):
     children = t[node] #list of children
+    
+    empty = 0 #PLACEHOLDER
+    
     if not children:  #leaf node -> base case
         c = 0
         return [c] #probably a dictionary later, with S as key? maybe value can be set + c?
     else: #split in 3 cases?
         node_t = get_node_t(children, bags) #node type
+        
         if node_t == "join":
-            pass
+            c1 = rec_calc_c(t, S, bags, children[0])
+            c2 = rec_calc_c(t, S, bags, children[1])
+            c_table = c1 + c2 - sum(S) #sum(S) is meant to be nbr of 1s in 1hot S
+            
+        #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
-            pass
+            w = set_difference(bags[children[0]], bags[node])
+            c_table = max(rec_calc_c(t, S, bags, children[0]), rec_calc_c(t, set_union(S, w), bags, children[0]))
+        
         elif node_t == "introduce":
-            v = set_difference(node, children[0], bags) #The node that is introduced
-            c_table = rec_calc_c(children[0], bags, node)
+            v = set_difference(bags[node], bags[children[0]]) #The node that is introduced
+            if set_intersection(bags[node], v) == empty: #CHANGE EMPTY
+                c_table = rec_calc_c(t, S, bags, children[0])
+            else: 
+                c_table = rec_calc_c(t, set_difference(S, v), bags, children[0])
 
 # given a list represetnation of the set, encode it into a binary representation
 def binary_encoding(list_set):
@@ -137,6 +150,9 @@ def binary_decoding(int_set):
         list.append(int_set.bit_length()) # bit length is the same as the leftmost bit
         int_set = int_set >> 1
     return list
+
+def set_union(a, b):
+    return a | b
 
 def set_difference(a, b): # given binary representations of 2 sets, find their difference
     return a & ~ b
