@@ -147,8 +147,10 @@ def binary_encoding(list_set):
 def binary_decoding(int_set):
     list = []
     while int_set > 0:
-        list.append(int_set.bit_length()) # bit length is the same as the leftmost bit
-        int_set = int_set >> 1
+        highest_bit = int_set.bit_length() - 1
+        list.append(highest_bit) 
+        int_set ^=  (1 << highest_bit) # flip highest bit to 0
+        print(f" into {int_set:b}")
     return list
 
 def set_union(a, b):
