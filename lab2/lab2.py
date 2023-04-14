@@ -108,7 +108,6 @@ def make_nice():
     pass
 
 def independent_set(t, bags):
-    
     pass
 
 #t is tree of nodes, bags is node contents, node is current node in tree
@@ -128,7 +127,8 @@ def rec_calc_c(t, bags, node):
             c_table = rec_calc_c(children[0], bags, node)
 
 def set_difference(n1, n2, bags): #given bags, what is bags[n1] - bags[n2]
-    pass
+    return bags[n1] & ~ bags[n2]    # Bitwise operations for one-hot encoding (integers).
+    #return bags[n1] - bags[n2]     # If we use sets, we can use built-in set operations
             
 def get_node_t(node, children, bags):
     if len(children) > 1:
