@@ -107,7 +107,7 @@ def make_rooted():
 def make_nice():
     pass
 
-def independent_set(t, bags):
+def independent_set():
     pass
 
 #t is tree of nodes, bags is node contents, node is current node in tree
@@ -126,10 +126,24 @@ def rec_calc_c(t, bags, node):
             v = set_difference(node, children[0], bags) #The node that is introduced
             c_table = rec_calc_c(children[0], bags, node)
 
-def set_difference(n1, n2, bags): #given bags, what is bags[n1] - bags[n2]
-    return bags[n1] & ~ bags[n2]    # Bitwise operations for one-hot encoding (integers).
-    #return bags[n1] - bags[n2]     # If we use sets, we can use built-in set operations
-            
+# given a list represetnation of the set, encode it into a binary representation
+def binary_encoding(list_set):
+    return sum ([1<<i for i in list_set])
+
+# given a binary representation of a set, decode it into a list representation
+def binary_decoding(int_set):
+    list = []
+    while int_set > 0:
+        list.append(int_set.bit_length()) # bit length is the same as the leftmost bit
+        int_set = int_set >> 1
+    return list
+
+def set_difference(a, b): # given binary representations of 2 sets, find their difference
+    return a & ~ b
+
+def set_intersection(a, b): # given binary representations of 2 sets, find their interseciton
+    return a & b
+
 def get_node_t(node, children, bags):
     if len(children) > 1:
         return "join"
@@ -139,8 +153,6 @@ def get_node_t(node, children, bags):
         return "introduce" #only option left
             
 if __name__ == "__main__":
-    
-
     g_string = data_path + "BalancedTree_3_5.gr"
     t_string = data_path + "BalancedTree_3_5.td"
     parse_graph(g_string)
