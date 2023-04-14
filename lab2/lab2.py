@@ -17,7 +17,6 @@ g = {}
 n_e = 0 #number of edges in input
 n_v = 0 #number of vertices in input
 t = {} #dict for edges in tree - Ill use one dict for bags and one for bag-edges (both with bag nbr as key) - could make joint data class
-root = -1 #index of root node, assigned later
 bags = {} #dict for bags
 num_bags = 0
 tree_w = 0
@@ -91,7 +90,19 @@ def parse_tree(t_string):
                     t[v2] = [v1]
             
 def make_rooted():
-    pass
+    def rec_make_rooted(v, parent):
+        t[v].remove(parent)
+        for child in t[v]:
+            rec_make_rooted(child, v)
+
+    root = list(t.keys())[0] # practically random, but deterministic
+
+    for child in t[root]:
+        rec_make_rooted(child, root)
+    print(f"root: {root} \nrootchildren: {t[root]}")
+    return root
+
+
 
 def make_nice():
     pass
@@ -134,7 +145,8 @@ if __name__ == "__main__":
     t_string = data_path + "BalancedTree_3_5.td"
     parse_graph(g_string)
     parse_tree(t_string)
-    make_rooted()
+
+    root = make_rooted()
     make_nice()
     n = independent_set()
     print(n) 
