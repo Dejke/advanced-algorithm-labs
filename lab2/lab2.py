@@ -96,8 +96,36 @@ def make_rooted():
 def make_nice():
     pass
 
-def independent_set():
+def independent_set(t, bags):
+    
     pass
+
+#t is tree of nodes, bags is node contents, node is current node in tree
+def rec_calc_c(t, bags, node):
+    children = t[node] #list of children
+    if not children:  #leaf node -> base case
+        c = 0
+        return [c] #probably a dictionary later, with S as key? maybe value can be set + c?
+    else: #split in 3 cases?
+        node_t = get_node_t(children, bags) #node type
+        if node_t == "join":
+            pass
+        elif node_t == "forget":
+            pass
+        elif node_t == "introduce":
+            v = set_difference(node, children[0], bags) #The node that is introduced
+            c_table = rec_calc_c(children[0], bags, node)
+
+def set_difference(n1, n2, bags): #given bags, what is bags[n1] - bags[n2]
+    pass
+            
+def get_node_t(node, children, bags):
+    if len(children) > 1:
+        return "join"
+    elif len(bags[children[0]]) > len(bags[node]): #if child bag is bigger, this is forget
+        return "forget"
+    else:
+        return "introduce" #only option left
             
 if __name__ == "__main__":
     
