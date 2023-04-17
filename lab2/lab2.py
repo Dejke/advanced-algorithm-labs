@@ -107,14 +107,20 @@ def make_rooted():
 def make_nice():
     pass
 
+global empty
+
 def independent_set():
+    #make starting set S
+    S = binary_encoding()
+    global empty
+    empty = set_difference(S,S)
     pass
 
 #t is tree of nodes, bags is node contents, node is current node in tree
 def rec_calc_c(t, S, bags, node):
     children = t[node] #list of children
     
-    empty = 0 #PLACEHOLDER
+    empty = 0  #should be right
     
     if not children:  #leaf node -> base case
         c = 0
@@ -134,7 +140,7 @@ def rec_calc_c(t, S, bags, node):
         
         elif node_t == "introduce":
             v = set_difference(bags[node], bags[children[0]]) #The node that is introduced
-            if set_intersection(bags[node], v) == empty: #CHANGE EMPTY
+            if set_intersection(bags[node], v) == empty: 
                 c_table = rec_calc_c(t, S, bags, children[0])
             else: 
                 c_table = rec_calc_c(t, set_difference(S, v), bags, children[0])
