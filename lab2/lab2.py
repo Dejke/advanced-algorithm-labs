@@ -4,6 +4,8 @@ Created on Tue Apr 11 14:46:15 2023
 
 @author: Isak
 """
+#from pathlib import Path
+import os
 data_path = "./data/"
 
 
@@ -108,35 +110,42 @@ def make_nice():
     pass
 
 global empty
+global c_table
 
 def independent_set():
-    #make starting set S
-    S = binary_encoding()
+    
     global empty
-    empty = set_difference(S,S)
+    global c_table
+    c_table = {} #table of tables (first key (which bag/table (t in pdf))) bag_nbr : value table(dict) of c_values with key subset (S in pdf, binary enc) : value c_value))
+    
     pass
 
 #want c values for each subset- for each node -> dictionary of dictionaries, with outer key
 #being node and inner being subset -> binary encoding i guess
 #t is tree of nodes, bags is node contents, node is current node in tree
-#
+# assuming bags contains key bag_nbr : val binary_enc_of_bagset
+# and t contains key bag_nbr : val list of children's bag nbrs
 def rec_calc_c(t, S, bags, node):
     children = t[node] #list of children
-    
+    global c_table
     empty = 0  #should be right
     
     if not children:  #leaf node -> base case
+        c_table[node] = {node:0}
         return {node:0} #probably a dictionary later, with S as key? maybe value can be set + c?
     
     else: #split in 3 cases?
         node_t = get_node_t(children, bags) #node type
         #do these for each subset S
         if node_t == "join":
-            c1 = rec_calc_c(t, S, bags, children[0])
-            #c_table[children[0]] = ... ^
-            c2 = rec_calc_c(t, S, bags, children[1])
-            
-            c_table = c1 + c2 - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+            S_set = powerset(bags[node])
+            for S in S_set: #for each subset
+                c1 = rec_calc_c(t, S, bags, children[0]) #in join all subsets will be same
+                #c_table[children[0]] = ... ^
+                c2 = rec_calc_c(t, S, bags, children[1])
+                
+                c_table[node] = c1 + c2 - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+                return c_table[node]
             #more efficient way?
             # something like |
             #                v
@@ -145,7 +154,9 @@ def rec_calc_c(t, S, bags, node):
         #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
             w = set_difference(bags[children[0]], bags[node])
-            c_table = max(rec_calc_c(t, S, bags, children[0]), rec_calc_c(t, set_union(S, w), bags, children[0]))
+            S_set = powerset(bags[node])
+            for S in S_set:
+                c_table = max(rec_calc_c(t, S, bags, children[0]), rec_calc_c(t, set_union(S, w), bags, children[0]))
         
         elif node_t == "introduce":
             v = set_difference(bags[node], bags[children[0]]) #The node that is introduced
@@ -197,8 +208,18 @@ def get_node_t(node, children, bags):
         return "introduce" #only option left
             
 if __name__ == "__main__":
-    g_string = data_path + "BalancedTree_3_5.gr"
-    t_string = data_path + "BalancedTree_3_5.td"
+    #g_string = data_path + "BalancedTree_3_5.gr"
+    #t_string = data_path + "BalancedTree_3_5.td"
+    #g_string = Path("BalancedTree_3_5.gr")
+    #t_string = Path("BalancedTree_3_5.td")
+    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    g_rel_path = "data/BalancedTree_3_5.gr"
+    t_rel_path = "data/BalancedTree_3_5.td"
+    g_string = os.path.join(script_dir, g_rel_path)
+    t_string = os.path.join(script_dir, t_rel_path)
+    #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
+    #t_string = Path(__file__).with_name('BalancedTree_3_5.td')
+    print(g_string)
     parse_graph(g_string)
     parse_tree(t_string)
 
