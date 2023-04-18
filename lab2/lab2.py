@@ -112,20 +112,22 @@ def make_nice():
 global empty
 global c_table
 
-def independent_set():
+def independent_set(t, bags, root):
     
     global empty
     global c_table
     c_table = {} #table of tables (first key (which bag/table (t in pdf))) bag_nbr : value table(dict) of c_values with key subset (S in pdf, binary enc) : value c_value))
+    rec_calc_c(t, bags, root) #start from root, root looks at children values etc recursively
     
-    pass
 
 #want c values for each subset- for each node -> dictionary of dictionaries, with outer key
 #being node and inner being subset -> binary encoding i guess
 #t is tree of nodes, bags is node contents, node is current node in tree
 # assuming bags contains key bag_nbr : val binary_enc_of_bagset
 # and t contains key bag_nbr : val list of children's bag nbrs
-def rec_calc_c(t, S, bags, node):
+
+
+def rec_calc_c(t, bags, node):
     children = t[node] #list of children
     global c_table
     empty = 0  #should be right
@@ -139,13 +141,15 @@ def rec_calc_c(t, S, bags, node):
         #do these for each subset S
         if node_t == "join":
             S_set = powerset(bags[node])
-            for S in S_set: #for each subset
-                c1 = rec_calc_c(t, S, bags, children[0]) #in join all subsets will be same
-                #c_table[children[0]] = ... ^
-                c2 = rec_calc_c(t, S, bags, children[1])
-                
-                c_table[node] = c1 + c2 - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
-                return c_table[node]
+            c1 = rec_calc_c(t, bags, children[0]) 
+            #c_table[children[0]] = ... ^
+            c2 = rec_calc_c(t, bags, children[1])
+            #dont need to redo this, one call to rec_calc should calculate for all subsets 
+            for S in S_set: #for each subset              
+                #join node -> same subsets in children as parent
+                c_table[node][S] = c1[S] + c2[S] - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+                #is sum over list inefficient?
+            return c_table[node]
             #more efficient way?
             # something like |
             #                v
@@ -155,15 +159,24 @@ def rec_calc_c(t, S, bags, node):
         elif node_t == "forget":
             w = set_difference(bags[children[0]], bags[node])
             S_set = powerset(bags[node])
+            c1 = rec_calc_c(t, bags, children[0])
+            #c2 = rec_calc_c(t, set_union(S, w), bags, children[0])
             for S in S_set:
-                c_table = max(rec_calc_c(t, S, bags, children[0]), rec_calc_c(t, set_union(S, w), bags, children[0]))
+                c_table[node][S] = max(c1[S], c1[set_union(S, w)])
+            return c_table[node]
         
         elif node_t == "introduce":
             v = set_difference(bags[node], bags[children[0]]) #The node that is introduced
-            if set_intersection(bags[node], v) == empty: 
-                c_table = rec_calc_c(t, S, bags, children[0])
-            else: 
-                c_table = rec_calc_c(t, set_difference(S, v), bags, children[0])
+            S_set = powerset(bags[node])
+            c1 = rec_calc_c(t, bags, children[0])
+            for S in S_set:
+                if set_intersection(bags[node], v) == empty: 
+                    c_table[node][S] = c1[S]
+                    #rec_calc_c(t, bags, children[0])
+                else: 
+                    c_table[node][S] = c1[set_difference(S, v)]+1 #the 1 for having 1 more node after introduce
+                    #rec_calc_c(t, set_difference(S, v), bags, children[0])
+            return c_table[node]
 
 
 def get_subsets(S): #for one set S find all subsets
@@ -219,7 +232,7 @@ if __name__ == "__main__":
     t_string = os.path.join(script_dir, t_rel_path)
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
     #t_string = Path(__file__).with_name('BalancedTree_3_5.td')
-    print(g_string)
+    #print(g_string)
     parse_graph(g_string)
     parse_tree(t_string)
 
