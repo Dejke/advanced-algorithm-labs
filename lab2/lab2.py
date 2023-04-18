@@ -169,7 +169,6 @@ def binary_decoding(int_set):
         highest_bit = int_set.bit_length() - 1
         list.append(highest_bit) 
         int_set ^=  (1 << highest_bit) # flip highest bit to 0
-        print(f" into {int_set:b}")
     return list
 
 def set_union(a, b):
@@ -180,6 +179,14 @@ def set_difference(a, b): # given binary representations of 2 sets, find their d
 
 def set_intersection(a, b): # given binary representations of 2 sets, find their interseciton
     return a & b
+
+def powerset(int_set): 
+    masks = [1 << mask for mask in range(int_set.bit_length())  if int_set & (1 << mask)] # eg int_set 0011 gives [0001, 0010]
+    
+    ls = {int_set}
+    for mask in masks: #2^n subsets
+        ls.update(powerset(int_set^mask)) # turn off the masked bit with xor 
+    return ls
 
 def get_node_t(node, children, bags):
     if len(children) > 1:
