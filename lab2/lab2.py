@@ -116,23 +116,32 @@ def independent_set():
     empty = set_difference(S,S)
     pass
 
+#want c values for each subset- for each node -> dictionary of dictionaries, with outer key
+#being node and inner being subset -> binary encoding i guess
 #t is tree of nodes, bags is node contents, node is current node in tree
+#
 def rec_calc_c(t, S, bags, node):
     children = t[node] #list of children
     
     empty = 0  #should be right
     
     if not children:  #leaf node -> base case
-        c = 0
-        return [c] #probably a dictionary later, with S as key? maybe value can be set + c?
+        return {node:0} #probably a dictionary later, with S as key? maybe value can be set + c?
+    
     else: #split in 3 cases?
         node_t = get_node_t(children, bags) #node type
-        
+        #do these for each subset S
         if node_t == "join":
             c1 = rec_calc_c(t, S, bags, children[0])
+            #c_table[children[0]] = ... ^
             c2 = rec_calc_c(t, S, bags, children[1])
-            c_table = c1 + c2 - sum(S) #sum(S) is meant to be nbr of 1s in 1hot S
             
+            c_table = c1 + c2 - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+            #more efficient way?
+            # something like |
+            #                v
+            #c_table[node] = {subset_binaryenc : val for subset_binaryenc in subset}
+            #where c_table is big table, c_table[node] are subtables
         #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
             w = set_difference(bags[children[0]], bags[node])
@@ -144,6 +153,10 @@ def rec_calc_c(t, S, bags, node):
                 c_table = rec_calc_c(t, S, bags, children[0])
             else: 
                 c_table = rec_calc_c(t, set_difference(S, v), bags, children[0])
+
+
+def get_subsets(S): #for one set S find all subsets
+    pass
 
 # given a list represetnation of the set, encode it into a binary representation
 def binary_encoding(list_set):
