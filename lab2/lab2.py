@@ -9,6 +9,7 @@ import os
 data_path = "./data/"
 
 def parse_graph(g_string):
+    g = {}
     with open(g_string) as g_file:
         while True:
             l = g_file.readline()
@@ -36,6 +37,7 @@ def parse_graph(g_string):
                 g[v2].append(v1)
             else:
                 g[v2] = [v1]
+    return g
 
 
 def parse_tree(t_string):
@@ -234,7 +236,7 @@ def root_fine(t, bags, root):
     return (t,bags,new_root)
 
 def leaf_fine(t, bags):
-    index = len(bags)
+    index = len(bags) + 1
     for bag in range(1,index) :
              
         if not t[bag]: #if bag is a leaf
@@ -254,10 +256,10 @@ def leaf_fine(t, bags):
                     else : 
                         t[index]=[]
     return t, bags
-    
+
 def one_leaf(t, bags,leaf):
     new_leaf = leaf
-    index = len(bags)          
+    index = len(bags) + 1          
     if bags[leaf]:#if bag is not empty
         node = bags[leaf]
         n = len(node)
@@ -276,17 +278,60 @@ def one_leaf(t, bags,leaf):
         new_leaf = index
     return t, bags,new_leaf
 
-
 def between_nodes(t, bags):
     dicti=bags
-    for v in dicti:
-        enfants = t[v]
-        for i in range(len(enfants)) : 
-            del(t[v][i])
-            t,bags,highest = root_fine(t,bags,t[v][i])
-            t, bags,new_leaf = one_leaf(t, bags, )
-            t[new_leaf].append(highest)
-    return t, bags
+    index = len(bags) + 1
+    for parent in dicti:
+        enfants = t[parent]
+        for i in range(len(enfants)):
+            child = enfants[i]
+
+            parentbag = set(bags[parent])
+            childbag  = set(bags[child])
+            to_introduce = parentbag - (parentbag & childbag)
+            to_forget = childbag - (parentbag & childbag)
+
+             
+            if to_forget: # non-empty
+                to_forget.pop()
+            elif to_introduce: 
+                to_introduce.pop()
+            else:
+                continue
+
+            del(t[parent][i])
+            new_node = parent 
+
+            for node in to_introduce:
+                new_node = index
+                t[parent][i] = new_node
+                parentbag.remove(node)
+                bags[new_node] = list(parentbag)
+                parent = new_node
+                index += 1
+
+            for node in to_forget:
+                new_node = index
+                t[parent][i] = new_node
+                parentbag.add(node)
+                bags[new_node] = list(parentbag)
+                parent = new_node
+                index += 1
+            
+            if new_node==parent:
+                t[new_node][i] = child
+            else:
+                t[new_node] = [child]
+            
+
+
+    #         firstchild = t[v][0]
+    #         del(t[v][0])
+    #         t,bags,highest = root_fine(t,bags,x)
+    #         t, bags,new_leaf = one_leaf(t, bags, v)
+    #         t[new_leaf].append(highest)
+    # return t, bags
+
 
 def make_nice(t,bags,root):
     t,bags,root = root_fine(t, bags,root)
@@ -300,7 +345,7 @@ if __name__ == "__main__":
         #to rep graph... all edges in a list? 
     #a dict with vertices as keys and lists of edges(pairs of vertex-nums) as values?
     # Internet - key vertex, value list of neighbours
-    g = {}
+    
     n_e = 0 #number of edges in input
     n_v = 0 #number of vertices in input
     t = {} #dict for edges in tree - Ill use one dict for bags and one for bag-edges (both with bag nbr as key) - could make joint data class
@@ -320,13 +365,13 @@ if __name__ == "__main__":
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
     #t_string = Path(__file__).with_name('BalancedTree_3_5.td')
     #print(g_string)
-    parse_graph(g_string)
+    g = parse_graph(g_string)
     parse_tree(t_string)
 
     print(len(t))
     root, t = make_rooted(t)
     print(len(t))
-    t, bags, root = make_nice(t,bags, root)
+    #t, bags, root = make_nice(t,bags, root)
     result = independent_set(t, bags, root)
     print(result) 
 
