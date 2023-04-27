@@ -9,6 +9,7 @@ import os
 data_path = "./data/"
 
 def parse_graph(g_string):
+    g = {}
     with open(g_string) as g_file:
         while True:
             l = g_file.readline()
@@ -36,6 +37,7 @@ def parse_graph(g_string):
                 g[v2].append(v1)
             else:
                 g[v2] = [v1]
+    return g
 
 
 def parse_tree(t_string):
@@ -319,9 +321,6 @@ def between_nodes(t, bags):
                 t[new_node][i] = child
             else:
                 t[new_node] = [child]
-
-            
-
             
 
 
@@ -345,7 +344,7 @@ if __name__ == "__main__":
         #to rep graph... all edges in a list? 
     #a dict with vertices as keys and lists of edges(pairs of vertex-nums) as values?
     # Internet - key vertex, value list of neighbours
-    g = {}
+    
     n_e = 0 #number of edges in input
     n_v = 0 #number of vertices in input
     t = {} #dict for edges in tree - Ill use one dict for bags and one for bag-edges (both with bag nbr as key) - could make joint data class
@@ -365,7 +364,7 @@ if __name__ == "__main__":
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
     #t_string = Path(__file__).with_name('BalancedTree_3_5.td')
     #print(g_string)
-    parse_graph(g_string)
+    g = parse_graph(g_string)
     parse_tree(t_string)
 
     print(len(t))
