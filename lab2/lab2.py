@@ -120,7 +120,7 @@ def rec_calc_c(t, bags, node):
             atemp = bags[node]
             btemp = binary_encoding(atemp)
             S_set = powerset(btemp)
-            S_set = powerset(binary_encoding(bags[node]))
+            S_set = powerset(binary_encoding(bags[node])) #all subsets of original bag
             c1 = rec_calc_c(t, bags, children[0]) 
             #c_table[children[0]] = ... ^
             c2 = rec_calc_c(t, bags, children[1])
@@ -138,6 +138,7 @@ def rec_calc_c(t, bags, node):
             #where c_table is big table, c_table[node] are subtables
         #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
+            w = set_difference(bags[children[0]], bags[0]) #the node that is forgotten
             atemp = bags[node]
             btemp = binary_encoding(atemp)
             S_set = powerset(btemp)
