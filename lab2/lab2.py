@@ -183,11 +183,13 @@ def binary_decoding(int_set):
     return list
 
 def set_union(a, b):
-    assert(isinstance((a,b), (int,int)))
+    assert(isinstance(a, int))
+    assert(isinstance(b, int))
     return a | b
 
 def set_difference(a, b): # given binary representations of 2 sets, find their difference
-    assert(isinstance((a,b), (int,int)))
+    assert(isinstance(a, int))
+    assert(isinstance(b, int))
     return a & ~ b
 
 def set_intersection(a, b): # given binary representations of 2 sets, find their interseciton
@@ -215,6 +217,7 @@ def get_node_t(node, children, bags):
 
 def root_fine(t, bags, root):
     new_root = root
+    #index = len(bags)
     if not bags[root]==[]:
         n=len(t[root])
         index = len(bags)
@@ -226,15 +229,16 @@ def root_fine(t, bags, root):
             t[index] =[node_child]
             node_child = index
             index +=1
-    new_root = index-1
+        new_root = index-1
     return (t,bags,new_root)
 
 def leaf_fine(t, bags):
     index = len(bags)
-    for bag in t :
-        if t[bag]==[]: #if bag is a leaf
-            if not bags[bag]==[]:#if bag is not empty
-                node = t[bag]
+    for bag in range(1,index) :
+             
+        if not t[bag]: #if bag is a leaf
+            if bags[bag]:#if bag is not empty
+                node = bags[bag]
                 n = len(node)
                 del(node[0])
                 bags[index]=node
@@ -251,9 +255,10 @@ def leaf_fine(t, bags):
     return t, bags
     
 def one_leaf(t, bags,leaf):
-    new_leaf = leaf           
-    if not bags[leaf]==[]:#if bag is not empty
-        node = t[leaf]
+    new_leaf = leaf
+    index = len(bags)          
+    if bags[leaf]:#if bag is not empty
+        node = bags[leaf]
         n = len(node)
         del(node[0])
         bags[index]=node
@@ -278,7 +283,7 @@ def between_nodes(t, bags):
         for i in range(len(enfants)) : 
             del(t[v][i])
             t,bags,highest = root_fine(t,bags,t[v][i])
-            t, bags,new_leaf = one_leaf(t, bags,)
+            t, bags,new_leaf = one_leaf(t, bags, )
             t[new_leaf].append(highest)
     return t, bags
 
@@ -307,8 +312,8 @@ if __name__ == "__main__":
     #g_string = Path("BalancedTree_3_5.gr")
     #t_string = Path("BalancedTree_3_5.td")
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-    g_rel_path = "data/BalancedTree_3_5.gr"
-    t_rel_path = "data/BalancedTree_3_5.td"
+    g_rel_path = "data/web1.gr"
+    t_rel_path = "data/web1.td"
     g_string = os.path.join(script_dir, g_rel_path)
     t_string = os.path.join(script_dir, t_rel_path)
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
@@ -320,7 +325,7 @@ if __name__ == "__main__":
     print(len(t))
     root, t = make_rooted(t)
     print(len(t))
-    #t, bags, root = make_nice(t,bags, root)
+    t, bags, root = make_nice(t,bags, root)
     result = independent_set(t, bags, root)
     print(result) 
 
