@@ -8,22 +8,6 @@ Created on Tue Apr 11 14:46:15 2023
 import os
 data_path = "./data/"
 
-
-
-
-
-#to rep graph... all edges in a list? 
-#a dict with vertices as keys and lists of edges(pairs of vertex-nums) as values?
-# Internet - key vertex, value list of neighbours
-g = {}
-n_e = 0 #number of edges in input
-n_v = 0 #number of vertices in input
-t = {} #dict for edges in tree - Ill use one dict for bags and one for bag-edges (both with bag nbr as key) - could make joint data class
-bags = {} #dict for bags
-num_bags = 0
-tree_w = 0
-num_v = 0 #number of vertices in the original graph (should match n_v)
-  
 def parse_graph(g_string):
     with open(g_string) as g_file:
         while True:
@@ -91,7 +75,7 @@ def parse_tree(t_string):
                 else:
                     t[v2] = [v1]
             
-def make_rooted():
+def make_rooted(t):
     def rec_make_rooted(v, parent):
         t[v].remove(parent)
         for child in t[v]:
@@ -101,19 +85,12 @@ def make_rooted():
 
     for child in t[root]:
         rec_make_rooted(child, root)
-    print(f"root: {root} \nrootchildren: {t[root]}")
-    return root
-
-
-
-def make_nice():
-    pass
+    return root, t
 
 global empty
 global c_table
 
 def independent_set(t, bags, root):
-    
     global empty
     global c_table
     c_table = {} #table of tables (first key (which bag/table (t in pdf))) bag_nbr : value table(dict) of c_values with key subset (S in pdf, binary enc) : value c_value))
@@ -137,10 +114,13 @@ def rec_calc_c(t, bags, node):
         return {node:0} #probably a dictionary later, with S as key? maybe value can be set + c?
     
     else: #split in 3 cases?
-        node_t = get_node_t(children, bags) #node type
+        node_t = get_node_t(node, children, bags) #node type
         #do these for each subset S
         if node_t == "join":
-            S_set = powerset(bags[node])
+            atemp = bags[node]
+            btemp = binary_encoding(atemp)
+            S_set = powerset(btemp)
+            S_set = powerset(binary_encoding(bags[node]))
             c1 = rec_calc_c(t, bags, children[0]) 
             #c_table[children[0]] = ... ^
             c2 = rec_calc_c(t, bags, children[1])
@@ -157,8 +137,11 @@ def rec_calc_c(t, bags, node):
             #where c_table is big table, c_table[node] are subtables
         #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
-            w = set_difference(bags[children[0]], bags[node])
-            S_set = powerset(bags[node])
+            atemp = bags[node]
+            btemp = binary_encoding(atemp)
+            S_set = powerset(btemp)
+            #S_set = powerset(binary_encoding(bags[node]))
+            S_set = binary_decoding(powerset(binary_encoding(bags[node])))
             c1 = rec_calc_c(t, bags, children[0])
             #c2 = rec_calc_c(t, set_union(S, w), bags, children[0])
             for S in S_set:
@@ -167,7 +150,10 @@ def rec_calc_c(t, bags, node):
         
         elif node_t == "introduce":
             v = set_difference(bags[node], bags[children[0]]) #The node that is introduced
-            S_set = powerset(bags[node])
+            atemp = bags[node]
+            btemp = binary_encoding(atemp)
+            S_set = powerset(btemp)
+            #S_set = powerset(binary_encoding(bags[node]))
             c1 = rec_calc_c(t, bags, children[0])
             for S in S_set:
                 if set_intersection(bags[node], v) == empty: 
@@ -184,10 +170,12 @@ def get_subsets(S): #for one set S find all subsets
 
 # given a list represetnation of the set, encode it into a binary representation
 def binary_encoding(list_set):
+    assert(isinstance(list_set, list))
     return sum ([1<<i for i in list_set])
 
 # given a binary representation of a set, decode it into a list representation
 def binary_decoding(int_set):
+    assert(isinstance(int_set, int))
     list = []
     while int_set > 0:
         highest_bit = int_set.bit_length() - 1
@@ -196,15 +184,20 @@ def binary_decoding(int_set):
     return list
 
 def set_union(a, b):
+    assert(isinstance((a,b), (int,int)))
     return a | b
 
 def set_difference(a, b): # given binary representations of 2 sets, find their difference
+    assert(isinstance((a,b), (int,int)))
     return a & ~ b
 
 def set_intersection(a, b): # given binary representations of 2 sets, find their interseciton
+    assert(isinstance(a, int))
+    assert(isinstance(b, int))
     return a & b
 
 def powerset(int_set): 
+    assert(isinstance(int_set, int))
     masks = [1 << mask for mask in range(int_set.bit_length())  if int_set & (1 << mask)] # eg int_set 0011 gives [0001, 0010]
     
     ls = {int_set}
@@ -219,8 +212,96 @@ def get_node_t(node, children, bags):
         return "forget"
     else:
         return "introduce" #only option left
-            
+
+def root_fine(t, bags, root):
+    new_root = root
+    if not bags[root]==[]:
+        n=len(t[root])
+        index = len(bags)
+        node = t[root]
+        node_child = root
+        for i in range(n):
+            del(node[0])
+            bags[index]=node
+            t[index] =[node_child]
+            node_child = index
+            index +=1
+    new_root = index-1
+    return (t,bags,new_root)
+
+def leaf_fine(t, bags):
+    index = len(bags)
+    for bag in t :
+        if t[bag]==[]: #if bag is a leaf
+            if not bags[bag]==[]:#if bag is not empty
+                node = t[bag]
+                n = len(node)
+                del(node[0])
+                bags[index]=node
+                t[index] =[bag]
+                index +=1
+                for i in range(1,n):
+                    del(node[0])
+                    bags[index]=node
+                    if i!=n-1: #if it is not the final leaf
+                        t[index] = [index+1]
+                        index +=1
+                    else : 
+                        t[index]=[]
+    return t, bags
+    
+def one_leaf(t, bags,leaf):
+    new_leaf = leaf           
+    if not bags[leaf]==[]:#if bag is not empty
+        node = t[leaf]
+        n = len(node)
+        del(node[0])
+        bags[index]=node
+        t[index] =[leaf]
+        index +=1
+        for i in range(1,n):
+            del(node[0])
+            bags[index]=node
+            if i!=n-1: #if it is not the final leaf
+                t[index] = [index+1]
+                index +=1
+            else : 
+                t[index]=[]
+        new_leaf = index
+    return t, bags,new_leaf
+
+
+def between_nodes(t, bags):
+    dicti=bags
+    for v in dicti:
+        enfants = t[v]
+        for i in range(len(enfants)) : 
+            del(t[v][i])
+            t,bags,highest = root_fine(t,bags,t[v][i])
+            t, bags,new_leaf = one_leaf(t, bags,)
+            t[new_leaf].append(highest)
+    return t, bags
+
+def make_nice(t,bags,root):
+    t,bags,root = root_fine(t, bags,root)
+    t, bags = leaf_fine(t, bags)
+    t, bags = between_nodes(t, bags)
+    return t, bags, root
+
+
+
 if __name__ == "__main__":
+        #to rep graph... all edges in a list? 
+    #a dict with vertices as keys and lists of edges(pairs of vertex-nums) as values?
+    # Internet - key vertex, value list of neighbours
+    g = {}
+    n_e = 0 #number of edges in input
+    n_v = 0 #number of vertices in input
+    t = {} #dict for edges in tree - Ill use one dict for bags and one for bag-edges (both with bag nbr as key) - could make joint data class
+    bags = {} #dict for bags
+    num_bags = 0
+    tree_w = 0
+    num_v = 0 #number of vertices in the original graph (should match n_v)
     #g_string = data_path + "BalancedTree_3_5.gr"
     #t_string = data_path + "BalancedTree_3_5.td"
     #g_string = Path("BalancedTree_3_5.gr")
@@ -236,9 +317,11 @@ if __name__ == "__main__":
     parse_graph(g_string)
     parse_tree(t_string)
 
-    root = make_rooted()
-    make_nice()
-    n = independent_set()
-    print(n) 
+    print(len(t))
+    root, t = make_rooted(t)
+    print(len(t))
+    #t, bags, root = make_nice(t,bags, root)
+    result = independent_set(t, bags, root)
+    print(result) 
 
     
