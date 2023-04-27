@@ -151,7 +151,8 @@ def rec_calc_c(t, bags, node):
                 #is sum over list inefficient?
             return c_table[node]
             #more efficient way?
-            # something like |
+            
+            # something like | (think above is good)
             #                v
             #c_table[node] = {subset_binaryenc : val for subset_binaryenc in subset}
             #where c_table is big table, c_table[node] are subtables
@@ -179,8 +180,6 @@ def rec_calc_c(t, bags, node):
             return c_table[node]
 
 
-def get_subsets(S): #for one set S find all subsets
-    pass
 
 # given a list represetnation of the set, encode it into a binary representation
 def binary_encoding(list_set):
@@ -204,6 +203,7 @@ def set_difference(a, b): # given binary representations of 2 sets, find their d
 def set_intersection(a, b): # given binary representations of 2 sets, find their interseciton
     return a & b
 
+#finds subsets
 def powerset(int_set): 
     masks = [1 << mask for mask in range(int_set.bit_length())  if int_set & (1 << mask)] # eg int_set 0011 gives [0001, 0010]
     
