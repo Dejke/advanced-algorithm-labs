@@ -238,16 +238,18 @@ def root_fine(t, bags, root):
 
 def leaf_fine(t, bags):
     index = len(bags) + 1
-    for bag in range(1,index) :
+    for bag in range(1,index) : #bag = bag_nbr/node_nbr
              
         if not t[bag]: #if bag is a leaf
+            print(bag, " is a leaf")
             if bags[bag]:#if bag is not empty
                 node = bags[bag]
                 n = len(node)
                 #del(node[0])
                 node = node[1:len(node)]
                 bags[index]=node
-                t[index] =[bag]
+                t[bag] = [index]
+                t[index] = [index+1]
                 index +=1
                 for i in range(1,n):
                     #del(node[0])
@@ -314,25 +316,28 @@ def between_nodes(t, bags):
     for parent in dicti:
         enfants = t[parent]
         for i in range(len(enfants)):
+            print("Enfants: ", enfants)
             child = enfants[i]
 
             parentbag = set(bags[parent])
             childbag  = set(bags[child])
             to_introduce = parentbag - (parentbag & childbag)
             to_forget = childbag - (parentbag & childbag)
-
+            print("to_introduce", to_introduce)
+            print("to_forget", to_forget)
              
-            if to_forget: # non-empty
-                to_forget.pop()
-            elif to_introduce: 
+            if to_introduce: # non-empty
                 to_introduce.pop()
+            elif to_forget:         
+                to_forget.pop()
             else:
                 continue
 
-            del(t[parent][i])
+            #del(t[parent][i])
             new_node = parent 
 
             for node in to_introduce:
+                print("INtroducing", node)
                 new_node = index
                 t[parent][i] = new_node
                 parentbag.remove(node)
@@ -341,6 +346,7 @@ def between_nodes(t, bags):
                 index += 1
 
             for node in to_forget:
+                print("Forgetting", node)
                 new_node = index
                 t[parent][i] = new_node
                 parentbag.add(node)
@@ -349,6 +355,7 @@ def between_nodes(t, bags):
                 index += 1
             
             if new_node==parent:
+                print("newnode = ", new_node)
                 t[new_node][i] = child
             else:
                 t[new_node] = [child]
@@ -365,12 +372,16 @@ def between_nodes(t, bags):
 
 def make_nice(t,bags,root):
     print("Root:",root)
-    t,bags,root = root_fine(t, bags,root)
-    
+    t,bags,root = root_fine(t, bags,root)  
+    #print("bags when root empty", bags)
+    #print("tree with empty root:", t, "root:", root)
     t, bags = leaf_fine(t, bags)
-    print("tree with empty leaves:", t, "root:", root)
+    
     print("bags when leaves/root empty", bags)
+    print("tree with empty leaves:", t, "root:", root)
     t, bags = between_nodes(t, bags)
+    print("bags when between is fixed", bags)
+    print("tree when between is fixed:", t, "root:", root)
     t, bags = join_split(t, bags)
     return t, bags, root
 
