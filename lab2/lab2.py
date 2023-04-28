@@ -298,7 +298,10 @@ def join_split(t, bags):
                  #node's children as child, other gets the rest - repeat with new parent node
                 
                 index = index + 2
-                parent_bag = t[node_index] # here or at start of loop?
+                parent_bag = t[node_index]
+                
+    return t, bags
+                
 
 def between_nodes(t, bags):
     dicti = bags
@@ -359,6 +362,7 @@ def make_nice(t,bags,root):
     t,bags,root = root_fine(t, bags,root)
     t, bags = leaf_fine(t, bags)
     t, bags = between_nodes(t, bags)
+    t, bags = join_split(t, bags)
     return t, bags, root
 
 
