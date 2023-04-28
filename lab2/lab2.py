@@ -221,7 +221,7 @@ def get_node_t(node, children, bags):
 def root_fine(t, bags, root):
     new_root = root
     #index = len(bags)
-    if not bags[root]==[]:
+    if bags[root]: #if not empty list
         n=len(t[root])
         index = len(bags)
         node = t[root]
@@ -278,8 +278,30 @@ def one_leaf(t, bags,leaf):
         new_leaf = index
     return t, bags,new_leaf
 
+def join_split(t, bags):
+    index = len(bags) + 1
+    for node in range(1,index):
+        node_index = node #initially we have this, then it switches to join-nodes
+        if len(t[node]) > 1: #if its a split node
+            parent_bag = t[node]
+            while(len(parent_bag) > 1):
+                t[index] = parent_bag[0]
+                bags[index] = bags[node_index]
+                
+                t[index+1] = parent_bag[1:len(parent_bag)]
+                bags[index+1] = bags[node_index]
+                
+                t[node_index] = [index, index+1] #old parent now only has 2 children with identical bags
+                node_index = index+1 # new "parent node" that should be split with join
+                
+                 #create 2 identical children for join node, 1 gets one of original
+                 #node's children as child, other gets the rest - repeat with new parent node
+                
+                index = index + 2
+                parent_bag = t[node_index] # here or at start of loop?
+
 def between_nodes(t, bags):
-    dicti=bags
+    dicti = bags
     index = len(bags) + 1
     for parent in dicti:
         enfants = t[parent]
