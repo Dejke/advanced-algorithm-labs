@@ -222,12 +222,13 @@ def root_fine(t, bags, root):
     new_root = root
     #index = len(bags)
     if bags[root]: #if not empty list
-        n=len(t[root])
-        index = len(bags)
-        node = t[root]
+        n=len(bags[root]) #changed so n is number of vertices in root bag
+        index = len(bags)+1 #next index not used by tree yet
+        node = bags[root] 
         node_child = root
         for i in range(n):
-            del(node[0])
+            node = node[1:len(node)]
+            #del(node[0]) #bags[root] points to this list, so deleting in node changes for all
             bags[index]=node
             t[index] =[node_child]
             node_child = index
@@ -243,12 +244,14 @@ def leaf_fine(t, bags):
             if bags[bag]:#if bag is not empty
                 node = bags[bag]
                 n = len(node)
-                del(node[0])
+                #del(node[0])
+                node = node[1:len(node)]
                 bags[index]=node
                 t[index] =[bag]
                 index +=1
                 for i in range(1,n):
-                    del(node[0])
+                    #del(node[0])
+                    node = node[1:len(node)]
                     bags[index]=node
                     if i!=n-1: #if it is not the final leaf
                         t[index] = [index+1]
@@ -263,12 +266,14 @@ def one_leaf(t, bags,leaf):
     if bags[leaf]:#if bag is not empty
         node = bags[leaf]
         n = len(node)
-        del(node[0])
+        #del(node[0])
+        node = node[1:len(node)]
         bags[index]=node
         t[index] =[leaf]
         index +=1
         for i in range(1,n):
-            del(node[0])
+            #del(node[0])
+            node = node[1:len(node)]
             bags[index]=node
             if i!=n-1: #if it is not the final leaf
                 t[index] = [index+1]
@@ -282,13 +287,13 @@ def join_split(t, bags):
     index = len(bags) + 1
     for node in range(1,index):
         node_index = node #initially we have this, then it switches to join-nodes
-        if len(t[node]) > 1: #if its a split node
+        if len(t[node]) > 1: #if its a split node #NOTE: maybe check so not join already
             parent_bag = t[node]
             while(len(parent_bag) > 1):
                 t[index] = parent_bag[0]
                 bags[index] = bags[node_index]
                 
-                t[index+1] = parent_bag[1:len(parent_bag)]
+                t[index+1] = parent_bag[1:len(parent_bag)] #NOTE: maybe count children, make many joints without assigning all children - first
                 bags[index+1] = bags[node_index]
                 
                 t[node_index] = [index, index+1] #old parent now only has 2 children with identical bags
@@ -359,8 +364,12 @@ def between_nodes(t, bags):
 
 
 def make_nice(t,bags,root):
+    print("Root:",root)
     t,bags,root = root_fine(t, bags,root)
+    
     t, bags = leaf_fine(t, bags)
+    print("tree with empty leaves:", t, "root:", root)
+    print("bags when leaves/root empty", bags)
     t, bags = between_nodes(t, bags)
     t, bags = join_split(t, bags)
     return t, bags, root
@@ -397,7 +406,11 @@ if __name__ == "__main__":
     print(len(t))
     root, t = make_rooted(t)
     print(len(t))
-    #t, bags, root = make_nice(t,bags, root)
+    print("bags:", bags)
+    print("tree:", t)
+    t, bags, root = make_nice(t,bags, root)
+    print("bags:", bags)
+    print("tree:",t)
     result = independent_set(t, bags, root)
     print(result) 
 
