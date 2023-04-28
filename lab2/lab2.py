@@ -292,7 +292,7 @@ def join_split(t, bags):
         if len(t[node]) > 1: #if its a split node #NOTE: maybe check so not join already
             parent_bag = t[node]
             while(len(parent_bag) > 1):
-                t[index] = parent_bag[0]
+                t[index] = [parent_bag[0]]
                 bags[index] = bags[node_index]
                 
                 t[index+1] = parent_bag[1:len(parent_bag)] #NOTE: maybe count children, make many joints without assigning all children - first
@@ -311,54 +311,64 @@ def join_split(t, bags):
                 
 
 def between_nodes(t, bags):
-    dicti = bags
     index = len(bags) + 1
-    for parent in dicti:
+    for parent in range(1, len(t)+1):
         enfants = t[parent]
         for i in range(len(enfants)):
-            print("Enfants: ", enfants)
+            # print("Enfants: ", enfants)
             child = enfants[i]
 
             parentbag = set(bags[parent])
             childbag  = set(bags[child])
             to_introduce = parentbag - (parentbag & childbag)
             to_forget = childbag - (parentbag & childbag)
-            print("to_introduce", to_introduce)
-            print("to_forget", to_forget)
+            # print("to_introduce", to_introduce)
+            # print("to_forget", to_forget)
              
-            if to_introduce: # non-empty
-                to_introduce.pop()
-            elif to_forget:         
+            if to_forget:         
                 to_forget.pop()
+            elif to_introduce: # non-empty
+                to_introduce.pop()
             else:
                 continue
 
             #del(t[parent][i])
             new_node = parent 
-
+            
             for node in to_introduce:
-                print("INtroducing", node)
+                # print("INtroducing", node)
+                if new_node == parent:                
+                    t[parent][i] = index
+                else: 
+                    t[new_node] = [index]
+
                 new_node = index
-                t[parent][i] = new_node
+                
                 parentbag.remove(node)
                 bags[new_node] = list(parentbag)
-                parent = new_node
                 index += 1
 
             for node in to_forget:
-                print("Forgetting", node)
+                # print("Forgetting", node)
+                if new_node == parent:                
+                    t[parent][i] = index
+                else: 
+                    t[new_node] = [index]
+
                 new_node = index
-                t[parent][i] = new_node
+
                 parentbag.add(node)
                 bags[new_node] = list(parentbag)
-                parent = new_node
                 index += 1
+
+            
             
             if new_node==parent:
-                print("newnode = ", new_node)
+                # print("newnode = ", new_node)
                 t[new_node][i] = child
             else:
                 t[new_node] = [child]
+    return t, bags
             
 
 
@@ -371,17 +381,17 @@ def between_nodes(t, bags):
 
 
 def make_nice(t,bags,root):
-    print("Root:",root)
+    # print("Root:",root)
     t,bags,root = root_fine(t, bags,root)  
     #print("bags when root empty", bags)
     #print("tree with empty root:", t, "root:", root)
     t, bags = leaf_fine(t, bags)
     
-    print("bags when leaves/root empty", bags)
-    print("tree with empty leaves:", t, "root:", root)
+    # print("bags when leaves/root empty", bags)
+    # print("tree with empty leaves:", t, "root:", root)
     t, bags = between_nodes(t, bags)
-    print("bags when between is fixed", bags)
-    print("tree when between is fixed:", t, "root:", root)
+    # print("bags when between is fixed", bags)
+    # print("tree when between is fixed:", t, "root:", root)
     t, bags = join_split(t, bags)
     return t, bags, root
 
@@ -414,11 +424,9 @@ if __name__ == "__main__":
     g = parse_graph(g_string)
     parse_tree(t_string)
 
-    print(len(t))
     root, t = make_rooted(t)
-    print(len(t))
-    print("bags:", bags)
-    print("tree:", t)
+    # print("bags:", bags)
+    # print("tree:", t)
     t, bags, root = make_nice(t,bags, root)
     print("bags:", bags)
     print("tree:",t)
