@@ -91,6 +91,7 @@ def make_rooted(t):
 
 global empty
 global c_table
+global g
 
 def independent_set(t, bags, root):
     global empty
@@ -107,29 +108,39 @@ def independent_set(t, bags, root):
 
 
 def rec_calc_c(t, bags, node):
+    print("reccalc for node", node)
     children = t[node] #list of children
+    
     global c_table
+    global g
     empty = 0  #should be right
     
     if not children:  #leaf node -> base case
-        c_table[node] = {node:0}
-        return {node:0} #probably a dictionary later, with S as key? maybe value can be set + c?
+        print("node : ", node, "is a leaf, returning")
+        c_table[node] = {0:0} #only subset is empty set in leaf
+        return {0:0} #probably a dictionary later, with S as key? maybe value can be set + c?
     
     else: #split in 3 cases?
         node_t = get_node_t(node, children, bags) #node type
         #do these for each subset S
         if node_t == "join":
+            print("Join node")
             atemp = bags[node]
             btemp = binary_encoding(atemp)
             S_set = powerset(btemp)
             S_set = powerset(binary_encoding(bags[node])) #all subsets of original bag
-            c1 = rec_calc_c(t, bags, children[0]) 
+            c1 = rec_calc_c(t, bags, children[0])
+            print("new ctable entry: ", c_table[children[0]])
             #c_table[children[0]] = ... ^
             c2 = rec_calc_c(t, bags, children[1])
+            c_table[node] = {} #need to create empty dict first
             #dont need to redo this, one call to rec_calc should calculate for all subsets 
-            for S in S_set: #for each subset              
+            for S in S_set: #for each subset           
                 #join node -> same subsets in children as parent
-                c_table[node][S] = c1[S] + c2[S] - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+                if is_independent_set(g, binary_decoding(S)):
+                    c_table[node][S] = c1[S] + c2[S] - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+                else:
+                    c_table[node][S] = -float('inf')
                 #is sum over list inefficient?
             return c_table[node]
             #more efficient way?
@@ -140,32 +151,42 @@ def rec_calc_c(t, bags, node):
             #where c_table is big table, c_table[node] are subtables
         #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
-            w = set_difference(bags[children[0]], bags[0]) #the node that is forgotten
+            print("Forget node")
+            w = set_difference(binary_encoding(bags[children[0]]), binary_encoding(bags[node])) #the node that is forgotten
             atemp = bags[node]
             btemp = binary_encoding(atemp)
             S_set = powerset(btemp)
-            #S_set = powerset(binary_encoding(bags[node]))
-            S_set = binary_decoding(powerset(binary_encoding(bags[node])))
+            S_set = powerset(binary_encoding(bags[node]))
+            #S_set = binary_decoding(powerset(binary_encoding(bags[node])))
             c1 = rec_calc_c(t, bags, children[0])
             #c2 = rec_calc_c(t, set_union(S, w), bags, children[0])
+            c_table[node] = {} #need to create empty dict first
             for S in S_set:
-                c_table[node][S] = max(c1[S], c1[set_union(S, w)])
+                if is_independent_set(g, binary_decoding(S)):
+                    c_table[node][S] = max(c1[S], c1[set_union(S, w)])
+                else:
+                    c_table[node][S] = -float('inf')
             return c_table[node]
         
         elif node_t == "introduce":
-            v = set_difference(bags[node], bags[children[0]]) #The node that is introduced
+            print("Introduce node")
+            v = set_difference(binary_encoding(bags[node]), binary_encoding(bags[children[0]])) #The node that is introduced
             atemp = bags[node]
             btemp = binary_encoding(atemp)
             S_set = powerset(btemp)
             #S_set = powerset(binary_encoding(bags[node]))
             c1 = rec_calc_c(t, bags, children[0])
+            c_table[node] = {} #need to create empty dict first
             for S in S_set:
-                if set_intersection(bags[node], v) == empty: 
-                    c_table[node][S] = c1[S]
-                    #rec_calc_c(t, bags, children[0])
-                else: 
-                    c_table[node][S] = c1[set_difference(S, v)]+1 #the 1 for having 1 more node after introduce
-                    #rec_calc_c(t, set_difference(S, v), bags, children[0])
+                if is_independent_set(g, binary_decoding(S)):
+                    if set_intersection(S, v) == empty: 
+                        c_table[node][S] = c1[S]
+                        #rec_calc_c(t, bags, children[0])
+                    else: 
+                        c_table[node][S] = c1[set_difference(S, v)]+1 #the 1 for having 1 more node after introduce
+                        #rec_calc_c(t, set_difference(S, v), bags, children[0])
+                else:
+                    c_table[node][S] = -float('inf')
             return c_table[node]
 
 
@@ -213,6 +234,7 @@ def powerset(int_set):
 def get_node_t(node, children, bags):
     if len(children) > 1:
         return "join"
+    #one vertex difference -> binary rep bigger if it has the extra element
     elif len(bags[children[0]]) > len(bags[node]): #if child bag is bigger, this is forget
         return "forget"
     else:
@@ -393,8 +415,29 @@ def make_nice(t,bags,root):
     # print("bags when between is fixed", bags)
     # print("tree when between is fixed:", t, "root:", root)
     t, bags = join_split(t, bags)
+    
+    #make binary rep in bags
+    # for bag in bags:
+    #     bags[bag] = binary_encoding(bags[bag])
+    
     return t, bags, root
 
+def is_independent_set(G, vertices):
+   
+    for v in vertices:
+        if v not in G:
+            return False  # v is not a vertex in G
+        for u in G[v]:
+            if u in vertices:
+                return False  # u is a neighbor of v in vertices
+    return True
+
+def is_independent_set_v2(G, vertices):
+    for u in G: 
+        for v  in G[u]:
+            if u in vertices and v in vertices :
+                return False 
+    return True
 
 
 if __name__ == "__main__":
@@ -421,6 +464,7 @@ if __name__ == "__main__":
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
     #t_string = Path(__file__).with_name('BalancedTree_3_5.td')
     #print(g_string)
+    global g
     g = parse_graph(g_string)
     parse_tree(t_string)
 
@@ -428,6 +472,7 @@ if __name__ == "__main__":
     # print("bags:", bags)
     # print("tree:", t)
     t, bags, root = make_nice(t,bags, root)
+    
     print("bags:", bags)
     print("tree:",t)
     result = independent_set(t, bags, root)
