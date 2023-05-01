@@ -457,8 +457,8 @@ if __name__ == "__main__":
     #g_string = Path("BalancedTree_3_5.gr")
     #t_string = Path("BalancedTree_3_5.td")
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-    g_rel_path = "data/web1.gr"
-    t_rel_path = "data/web1.td"
+    g_rel_path = "data/eppstein.gr"
+    t_rel_path = "data/eppstein.td"
     g_string = os.path.join(script_dir, g_rel_path)
     t_string = os.path.join(script_dir, t_rel_path)
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
@@ -476,6 +476,8 @@ if __name__ == "__main__":
     print("bags:", bags)
     print("tree:",t)
     result = independent_set(t, bags, root)
-    print(result) 
+    print(result)
+    global c_table
+    print(c_table)
 
     
