@@ -335,7 +335,7 @@ def join_split(t, bags):
     for node in range(1,index):
         node_index = node #initially we have this, then it switches to join-nodes
         if len(t[node]) > 1: #if its a split node #NOTE: maybe check so not join already
-            parent_bag = t[node]
+            parent_bag = t[node] #list of children
             while(len(parent_bag) > 1):
                 t[index] = [parent_bag[0]]
                 bags[index] = bags[node_index]
@@ -502,5 +502,7 @@ if __name__ == "__main__":
     print(result)
     global c_table
     print(c_table)
+    
+    #plan for more nodes - create tuple of binary encodings (each can represent 63 nodes rn), 
 
     

@@ -6,6 +6,10 @@ Created on Tue Apr 11 14:46:15 2023
 """
 #from pathlib import Path
 import os
+from os import listdir
+from os.path import isfile, join
+import glob
+
 data_path = "./data/"
 
 def parse_graph(g_string):
@@ -13,7 +17,7 @@ def parse_graph(g_string):
     with open(g_string) as g_file:
         while True:
             l = g_file.readline()
-            print("reading start: ", l)
+            #print("reading start: ", l)
             syms = l.split()
             if syms[0] == 'p':
                 n_v = int(syms[2])
@@ -21,7 +25,7 @@ def parse_graph(g_string):
                 break
         for l in g_file:
             vertices = l.split()
-            print(vertices)
+            #print(vertices)
             if len(vertices) == 0 or vertices[0] == 'c': # if comment - skip
                 continue
             v1 = int(vertices[0])
@@ -44,7 +48,7 @@ def parse_tree(t_string):
     with open(t_string) as t_file:
         while True:
             l = t_file.readline()
-            print("reading start: ", l)
+            #print("reading start: ", l)
             syms = l.split()
             if syms[0] == 's':
                 num_bags = int(syms[2])
@@ -53,7 +57,7 @@ def parse_tree(t_string):
                 break     
         for l in t_file:
             vertices = l.split()
-            print(vertices)
+            #print(vertices)
             if len(vertices) == 0 or vertices[0] == 'c': # if comment - skip
                 continue
             elif vertices[0] == 'b':     
@@ -111,7 +115,7 @@ def independent_set(t, bags, root):
 
 
 def rec_calc_c(t, bags, node):
-    print("reccalc for node", node)
+    #print("reccalc for node", node)
     children = t[node] #list of children
     
     global c_table
@@ -120,7 +124,7 @@ def rec_calc_c(t, bags, node):
     empty = 0  #should be right
     
     if not children:  #leaf node -> base case
-        print("node : ", node, "is a leaf, returning")
+        #print("node : ", node, "is a leaf, returning")
         c_table[node] = {0:0} #only subset is empty set in leaf
         s_table[node] = {0:0}
         return {0:0} #probably a dictionary later, with S as key? maybe value can be set + c?
@@ -129,13 +133,13 @@ def rec_calc_c(t, bags, node):
         node_t = get_node_t(node, children, bags) #node type
         #do these for each subset S
         if node_t == "join":
-            print("Join node")
+            #print("Join node")
             atemp = bags[node]
             btemp = binary_encoding(atemp)
             S_set = powerset(btemp)
             S_set = powerset(binary_encoding(bags[node])) #all subsets of original bag
             c1 = rec_calc_c(t, bags, children[0])
-            print("new ctable entry: ", c_table[children[0]])
+            #print("new ctable entry: ", c_table[children[0]])
             #c_table[children[0]] = ... ^
             c2 = rec_calc_c(t, bags, children[1])
             c_table[node] = {} #need to create empty dict first
@@ -160,7 +164,7 @@ def rec_calc_c(t, bags, node):
             #where c_table is big table, c_table[node] are subtables
         #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
         elif node_t == "forget":
-            print("Forget node")
+            #print("Forget node")
             w = set_difference(binary_encoding(bags[children[0]]), binary_encoding(bags[node])) #the node that is forgotten
             atemp = bags[node]
             btemp = binary_encoding(atemp)
@@ -184,7 +188,7 @@ def rec_calc_c(t, bags, node):
             return c_table[node]
         
         elif node_t == "introduce":
-            print("Introduce node")
+            #print("Introduce node")
             v = set_difference(binary_encoding(bags[node]), binary_encoding(bags[children[0]])) #The node that is introduced
             atemp = bags[node]
             btemp = binary_encoding(atemp)
@@ -285,7 +289,7 @@ def leaf_fine(t, bags):
     for bag in range(1,index) : #bag = bag_nbr/node_nbr
              
         if not t[bag]: #if bag is a leaf
-            print(bag, " is a leaf")
+            #print(bag, " is a leaf")
             if bags[bag]:#if bag is not empty
                 node = bags[bag]
                 n = len(node)
@@ -428,15 +432,15 @@ def between_nodes(t, bags):
 def make_nice(t,bags,root):
     # print("Root:",root)
     t,bags,root = root_fine(t, bags,root)  
-    print("bags when root empty", bags)
-    print("tree with empty root:", t, "root:", root)
+    #print("bags when root empty", bags)
+    #print("tree with empty root:", t, "root:", root)
     t, bags = leaf_fine(t, bags)
     
-    print("bags when leaves/root empty", bags)
-    print("tree with empty leaves:", t, "root:", root)
+    #print("bags when leaves/root empty", bags)
+    #print("tree with empty leaves:", t, "root:", root)
     t, bags = between_nodes(t, bags)
-    print("bags when between is fixed", bags)
-    print("tree when between is fixed:", t, "root:", root)
+    #print("bags when between is fixed", bags)
+    #print("tree when between is fixed:", t, "root:", root)
     t, bags = join_split(t, bags)
     
     #make binary rep in bags
@@ -480,27 +484,45 @@ if __name__ == "__main__":
     #g_string = Path("BalancedTree_3_5.gr")
     #t_string = Path("BalancedTree_3_5.td")
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
-    g_rel_path = "data/eppstein.gr"
-    t_rel_path = "data/eppstein.td"
+    file_dir =  os.path.join(script_dir, "data")
+    onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
+    grfiles = glob.glob(os.path.join(file_dir, "*.gr"))
+    tdfiles = glob.glob(os.path.join(file_dir, "*.td"))
+    g_rel_path = "data/AhrensSzekeresGeneralizedQuadrangleGraph_3.gr"
+    t_rel_path = "data/AhrensSzekeresGeneralizedQuadrangleGraph_3.td"
     g_string = os.path.join(script_dir, g_rel_path)
     t_string = os.path.join(script_dir, t_rel_path)
+    
     #g_string = Path(__file__).with_name('BalancedTree_3_5.gr')
     #t_string = Path(__file__).with_name('BalancedTree_3_5.td')
     #print(g_string)
-    global g
-    g = parse_graph(g_string)
-    parse_tree(t_string)
-
-    root, t = make_rooted(t)
-    # print("bags:", bags)
-    # print("tree:", t)
-    t, bags, root = make_nice(t,bags, root)
     
-    print("bags:", bags)
-    print("tree:",t)
-    result = independent_set(t, bags, root)
-    print(result)
-    global c_table
-    print(c_table)
+    global g
+    files = list(zip(grfiles, tdfiles))
+    del files[0]
+    for g_string, t_string in files:
+        t = {} 
+        bags = {}
+        #note g should also reset but this is done in parse_graph
+        #print(g_string, t_string)
+        #g_string = files[1][0]
+        #t_string = files[1][1]
+        print("entered loop")
+        
+        g = parse_graph(g_string)
+        parse_tree(t_string)
+    
+        root, t = make_rooted(t)
+        # print("bags:", bags)
+        # print("tree:", t)
+        t, bags, root = make_nice(t,bags, root)
+        print("Finished tree decomp")
+        #print("bags:", bags)
+        #print("tree:",t)
+        result = independent_set(t, bags, root)
+        #print(result)
+        global c_table
+        #print(c_table)
+        print("Maximal indep set size: ", c_table[root][0])
 
     
