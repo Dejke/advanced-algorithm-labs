@@ -17,6 +17,7 @@ def root_fine(t, bags,root):
 def leaf_fine(t, bags):
     index = len(bags)
     for bag in t :
+        #print(t)
         if t[bag]==[]: #if bag is a leaf
             if not bags[bag]==[]:#if bag is not empty
                 node = t[bag]
