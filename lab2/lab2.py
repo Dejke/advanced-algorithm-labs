@@ -470,8 +470,6 @@ def is_independent_set_v2(G, vertices):
                 return False 
     return True
 
-#def calc_indep_set(grfile, tdfile):
-    
 
 
 if __name__ == "__main__":
