@@ -9,20 +9,11 @@ import os
 from os import listdir
 from os.path import isfile, join
 import glob
-import threading
-import _thread
-from threading import Thread
-from threading import Event
-from time import sleep
-from multiprocessing import Process
 
 data_path = "./data/"
 
-from itertools import chain, combinations
-
 def parse_graph(g_string):
     g = {}
-    n_v = 0
     with open(g_string) as g_file:
         while True:
             l = g_file.readline()
@@ -50,13 +41,10 @@ def parse_graph(g_string):
                 g[v2].append(v1)
             else:
                 g[v2] = [v1]
-    return g, n_v
+    return g
 
 
 def parse_tree(t_string):
-    t = {}
-    bags = {}
-    tree_w = 0
     with open(t_string) as t_file:
         while True:
             l = t_file.readline()
@@ -69,7 +57,7 @@ def parse_tree(t_string):
                 break     
         for l in t_file:
             vertices = l.split()
-            ##print(vertices)
+            #print(vertices)
             if len(vertices) == 0 or vertices[0] == 'c': # if comment - skip
                 continue
             elif vertices[0] == 'b':     
@@ -81,7 +69,7 @@ def parse_tree(t_string):
                 #do edge stuff
                 v1 = int(vertices[0])
                 #if v1 == 1:
-                #   #print(g[v1])
+                #   print(g[v1])
                 v2 = int(vertices[1])
                 
                 if t.get(v1): #if already in dict
@@ -92,7 +80,6 @@ def parse_tree(t_string):
                     t[v2].append(v1)
                 else:
                     t[v2] = [v1]
-    return t, bags, tree_w
             
 def make_rooted(t):
     def rec_make_rooted(v, parent):
@@ -108,19 +95,17 @@ def make_rooted(t):
 
 global empty
 global c_table
+global s_table #for checking subset that gave value in c_table
 global g
 
 def independent_set(t, bags, root):
     global empty
     global c_table
+    global s_table
     c_table = {} #table of tables (first key (which bag/table (t in pdf))) bag_nbr : value table(dict) of c_values with key subset (S in pdf, binary enc) : value c_value))
-    return rec_calc_c(t, bags, root) #start from root, root looks at children values etc recursively
-
-def independent_set_p(t, bags, root):
-    global empty
-    global c_table
-    c_table = {} #table of tables (first key (which bag/table (t in pdf))) bag_nbr : value table(dict) of c_values with key subset (S in pdf, binary enc) : value c_value))
-    return rec_calc_c_p(t, bags, root)    
+    s_table = {}
+    rec_calc_c(t, bags, root) #start from root, root looks at children values etc recursively
+    
 
 #want c values for each subset- for each node -> dictionary of dictionaries, with outer key
 #being node and inner being subset -> binary encoding i guess
@@ -128,6 +113,153 @@ def independent_set_p(t, bags, root):
 # assuming bags contains key bag_nbr : val binary_enc_of_bagset
 # and t contains key bag_nbr : val list of children's bag nbrs
 
+
+def rec_calc_c(t, bags, node):
+    #print("reccalc for node", node)
+    children = t[node] #list of children
+    
+    global c_table
+    #global s_table #where s_table[t][S] will contain the best set extension S^ for S, resulting in value c[t,S]
+    global g
+    empty = 0  #should be right
+    
+    if not children:  #leaf node -> base case
+        #print("node : ", node, "is a leaf, returning")
+        c_table[node] = {0:0} #only subset is empty set in leaf
+        #s_table[node] = {0:0}
+        return {0:0} #probably a dictionary later, with S as key? maybe value can be set + c?
+    
+    else: #split in 3 cases?
+        node_t = get_node_t(node, children, bags) #node type
+        #do these for each subset S
+        if node_t == "join":
+            #print("Join node")
+            atemp = bags[node]
+            btemp = binary_encoding(atemp)
+            S_set = powerset(btemp)
+            S_set = powerset(binary_encoding(bags[node])) #all subsets of original bag
+            c1 = rec_calc_c(t, bags, children[0])
+            #print("new ctable entry: ", c_table[children[0]])
+            #c_table[children[0]] = ... ^
+            c2 = rec_calc_c(t, bags, children[1])
+            c_table[node] = {} #need to create empty dict first
+            #s_table[node] = {}
+            #dont need to redo this, one call to rec_calc should calculate for all subsets 
+            for S in S_set: #for each subset           
+                #join node -> same subsets in children as parent
+                if is_independent_set(g, binary_decoding(S)):
+                    c_table[node][S] = c1[S] + c2[S] - sum([1 if i != 0 else 0 for i in binary_decoding(S)]) #sum(S) is meant to be nbr of 1s in 1hot S
+                    #s_table[node][S] = set_union(s_table[children[0]][S],s_table[children[1]][S])
+                    #s_table[node][S] = 
+                else:
+                    c_table[node][S] = -float('inf')
+                    #s_table[node][S] = 0
+                #is sum over list inefficient?
+            del c_table[children[0]]
+            del c_table[children[1]]
+            return c_table[node]
+            #more efficient way?
+            
+            # something like | (think above is good)
+            #                v
+            #c_table[node] = {subset_binaryenc : val for subset_binaryenc in subset}
+            #where c_table is big table, c_table[node] are subtables
+        #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
+        elif node_t == "forget":
+            #print("Forget node")
+            w = set_difference(binary_encoding(bags[children[0]]), binary_encoding(bags[node])) #the node that is forgotten
+            atemp = bags[node]
+            btemp = binary_encoding(atemp)
+            S_set = powerset(btemp)
+            S_set = powerset(binary_encoding(bags[node]))
+            #S_set = binary_decoding(powerset(binary_encoding(bags[node])))
+            c1 = rec_calc_c(t, bags, children[0])
+            #c2 = rec_calc_c(t, set_union(S, w), bags, children[0])
+            c_table[node] = {} #need to create empty dict first
+            #s_table[node] = {}
+            for S in S_set:
+                if is_independent_set(g, binary_decoding(S)):
+                    c_table[node][S] = max(c1[S], c1[set_union(S, w)])
+                    # if c1[S] > c1[set_union(S, w)]:
+                    #     s_table[node][S] = s_table[children[0]][S]
+                    # else:
+                    #     s_table[node][S] = s_table[children[0]][set_union(S, w)]
+                else:
+                    c_table[node][S] = -float('inf')
+                    # s_table[node][S] = 0
+            del c_table[children[0]]
+            return c_table[node]
+        
+        elif node_t == "introduce":
+            #print("Introduce node")
+            v = set_difference(binary_encoding(bags[node]), binary_encoding(bags[children[0]])) #The node that is introduced
+            atemp = bags[node]
+            btemp = binary_encoding(atemp)
+            S_set = powerset(btemp)
+            #S_set = powerset(binary_encoding(bags[node]))
+            c1 = rec_calc_c(t, bags, children[0])
+            c_table[node] = {} #need to create empty dict first
+            # s_table[node] = {}
+            for S in S_set:
+                if is_independent_set(g, binary_decoding(S)):
+                    if set_intersection(S, v) == empty: 
+                        c_table[node][S] = c1[S]
+                        
+                        # s_table[node][S] = s_table[children[0]][S]
+            
+                        #rec_calc_c(t, bags, children[0])
+                    else: 
+                        c_table[node][S] = c1[set_difference(S, v)]+1 #the 1 for having 1 more node after introduce
+                        #print("s_table:", s_table, "children[0]", children[0])
+                        # s_table[node][S] = set_union(s_table[children[0]][set_difference(S,v)],v)
+                        #rec_calc_c(t, set_difference(S, v), bags, children[0])
+                else:
+                    c_table[node][S] = -float('inf')
+                    # s_table[node][S] = 0
+            del c_table[children[0]]       
+            return c_table[node]
+
+
+
+# given a list represetnation of the set, encode it into a binary representation
+def binary_encoding(list_set):
+    assert(isinstance(list_set, list))
+    return sum ([1<<i for i in list_set])
+
+# given a binary representation of a set, decode it into a list representation
+def binary_decoding(int_set):
+    assert(isinstance(int_set, int))
+    list = []
+    while int_set > 0:
+        highest_bit = int_set.bit_length() - 1
+        list.append(highest_bit) 
+        int_set ^=  (1 << highest_bit) # flip highest bit to 0
+    return list
+
+def set_union(a, b):
+    assert(isinstance(a, int))
+    assert(isinstance(b, int))
+    return a | b
+
+def set_difference(a, b): # given binary representations of 2 sets, find their difference
+    assert(isinstance(a, int))
+    assert(isinstance(b, int))
+    return a & ~ b
+
+def set_intersection(a, b): # given binary representations of 2 sets, find their interseciton
+    assert(isinstance(a, int))
+    assert(isinstance(b, int))
+    return a & b
+
+#finds subsets
+def powerset(int_set): 
+    assert(isinstance(int_set, int))
+    masks = [1 << mask for mask in range(int_set.bit_length())  if int_set & (1 << mask)] # eg int_set 0011 gives [0001, 0010]
+    
+    ls = {int_set}
+    for mask in masks: #2^n subsets
+        ls.update(powerset(int_set^mask)) # turn off the masked bit with xor 
+    return ls
 
 def get_node_t(node, children, bags):
     if len(children) > 1:
@@ -138,150 +270,6 @@ def get_node_t(node, children, bags):
     else:
         return "introduce" #only option left
 
-def rec_calc_c(t, bags, node):
-    #print("reccalc for node", node)
-    children = t[node] #list of children
-    
-    global c_table
-    global g
-    empty = frozenset({})  #should be right
-    
-    if not children:  #leaf node -> base case
-        #print("node : ", node, " is a leaf, returning")
-        c_table[node] = {empty:0} #only subset is empty set in leaf
-        return {empty:0} #probably a dictionary later, with S as key? maybe value can be set + c?
-    
-    else: 
-        node_t = get_node_t(node, children, bags) 
-        if node_t == "join":
-            c1 = rec_calc_c(t, bags, children[0])
-            #print("new ctable entry: ", c_table[children[0]])
-            #c_table[children[0]] = ... ^
-            c2 = rec_calc_c(t, bags, children[1])
-            c_table[node] = {} #need to create empty dict first
-            #dont need to redo this, one call to rec_calc should calculate for all subsets 
-            for S in spowerset(bags[node]): #for each subset           
-                if is_independent_set(g, S):
-                    c_table[node][S] = c1[S] + c2[S] - len(S) 
-                else:
-                    c_table[node][S] = -float('inf')
-            del c_table[children[0]]
-            del c_table[children[1]]
-            return c_table[node]
-        #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
-        elif node_t == "forget":
-            w = bags[children[0]] - bags[node] #the node that is forgotten
-            c1 = rec_calc_c(t, bags, children[0])
-            c_table[node] = {} #need to create empty dict first
-            for S in spowerset(bags[node]): # for every subset
-                if is_independent_set(g, S):
-                    c_table[node][S] = max(c1[S], c1[S | w])
-                else:
-                    c_table[node][S] = -float('inf')
-            del c_table[children[0]]
-            return c_table[node]
-        
-        elif node_t == "introduce":
-            #print("Introduce node")
-            v = bags[node] - bags[children[0]] #The node that is introduced
-            c1 = rec_calc_c(t, bags, children[0])
-            c_table[node] = {} #need to create empty dict first'
-            #print(node)
-            #print(bags[node])
-            for S in spowerset(bags[node]):
-                if is_independent_set(g, S):
-                    if S & v == empty: 
-                        c_table[node][S] = c1[S]
-                        #rec_calc_c(t, bags, children[0])
-                    else: 
-                        c_table[node][S] = c1[S - v]+1 #the 1 for having 1 more node after introduce
-                        #rec_calc_c(t, set_difference(S, v), bags, children[0])
-                else:
-                    c_table[node][S] = -float('inf')
-            del c_table[children[0]]
-            return c_table[node]
-
-global interrupted
-def rec_calc_c_p(t, bags, node):
-    #print("reccalc for node", node)
-    global interrupted
-    # if event.is_set() or interrupted:
-    #     interrupted = True
-        
-    #     return "interrupted"
-    children = t[node] #list of children
-    
-    global c_table
-    global g
-    
-    empty = frozenset({})  #should be right
-    
-    if not children:  #leaf node -> base case
-        #print("node : ", node, " is a leaf, returning")
-        c_table[node] = {empty:0} #only subset is empty set in leaf
-        return {empty:0} #probably a dictionary later, with S as key? maybe value can be set + c?
-    
-    else: 
-        node_t = get_node_t(node, children, bags) 
-        if node_t == "join":
-            c1 = rec_calc_c(t, bags, children[0])
-            if interrupted:
-                return {empty:0}
-            #print("new ctable entry: ", c_table[children[0]])
-            #c_table[children[0]] = ... ^
-            c2 = rec_calc_c(t, bags, children[1])
-            if interrupted:
-                return {empty:0}
-            c_table[node] = {} #need to create empty dict first
-            #dont need to redo this, one call to rec_calc should calculate for all subsets 
-            for S in spowerset(bags[node]): #for each subset           
-                if is_independent_set(g, S):
-                    c_table[node][S] = c1[S] + c2[S] - len(S) 
-                else:
-                    c_table[node][S] = -float('inf')
-            del c_table[children[0]]
-            del c_table[children[1]]
-            return c_table[node]
-        #by changing last argument to children[0] in recursive calls below we switch to t' from t (node)
-        elif node_t == "forget":
-            w = bags[children[0]] - bags[node] #the node that is forgotten
-            c1 = rec_calc_c(t, bags, children[0])
-            if interrupted:
-                return {empty:0}
-            c_table[node] = {} #need to create empty dict first
-            for S in spowerset(bags[node]): # for every subset
-                if is_independent_set(g, S):
-                    c_table[node][S] = max(c1[S], c1[S | w])
-                else:
-                    c_table[node][S] = -float('inf')
-            del c_table[children[0]]
-            return c_table[node]
-        
-        elif node_t == "introduce":
-            #print("Introduce node")
-            v = bags[node] - bags[children[0]] #The node that is introduced
-            c1 = rec_calc_c(t, bags, children[0])
-            if interrupted:
-                return {empty:0}
-            c_table[node] = {} #need to create empty dict first'
-            #print(node)
-            #print(bags[node])
-            for S in spowerset(bags[node]):
-                if is_independent_set(g, S):
-                    if S & v == empty: 
-                        c_table[node][S] = c1[S]
-                        #rec_calc_c(t, bags, children[0])
-                    else: 
-                        c_table[node][S] = c1[S - v]+1 #the 1 for having 1 more node after introduce
-                        #rec_calc_c(t, set_difference(S, v), bags, children[0])
-                else:
-                    c_table[node][S] = -float('inf')
-            del c_table[children[0]]
-            return c_table[node]
-
-def spowerset(s):
-    return [frozenset(tup) for tup in chain.from_iterable(combinations(s,r) for r in range(len(s)+1))]
-    
 def root_fine(t, bags, root):
     new_root = root
     #index = len(bags)
@@ -292,6 +280,7 @@ def root_fine(t, bags, root):
         node_child = root
         for i in range(n):
             node = node[1:len(node)]
+            #del(node[0]) #bags[root] points to this list, so deleting in node changes for all
             bags[index]=node
             t[index] =[node_child]
             node_child = index
@@ -301,7 +290,7 @@ def root_fine(t, bags, root):
 
 def leaf_fine(t, bags):
     index = len(bags) + 1
-    for bag in range(1, index) : #bag = bag_nbr/node_nbr
+    for bag in range(1,index) : #bag = bag_nbr/node_nbr
              
         if not t[bag]: #if bag is a leaf
             #print(bag, " is a leaf")
@@ -323,7 +312,7 @@ def leaf_fine(t, bags):
                         index +=1
                     else : 
                         t[index]=[]
-                        index += 1
+                        index +=1
     return t, bags
 
 def one_leaf(t, bags,leaf):
@@ -451,18 +440,17 @@ def make_nice(t,bags,root):
     #print("tree with empty root:", t, "root:", root)
     t, bags = leaf_fine(t, bags)
     
-    # print("bags when leaves/root empty", bags)
-    # print("tree with empty leaves:", t, "root:", root)
+    #print("bags when leaves/root empty", bags)
+    #print("tree with empty leaves:", t, "root:", root)
     t, bags = between_nodes(t, bags)
-    # print("bags when between is fixed", bags)
-    # print("tree when between is fixed:", t, "root:", root)
+    #print("bags when between is fixed", bags)
+    #print("tree when between is fixed:", t, "root:", root)
     t, bags = join_split(t, bags)
     
-    #make set rep in bags
-    #print(bags)
-    for i in bags.keys():
-        bags[i] = set(bags[i])
-#    bags = [set(bag) for bag in bags]
+    #make binary rep in bags
+    # for bag in bags:
+    #     bags[bag] = binary_encoding(bags[bag])
+    
     return t, bags, root
 
 def is_independent_set(G, vertices):
@@ -482,17 +470,9 @@ def is_independent_set_v2(G, vertices):
                 return False 
     return True
 
-def calc_indep_set(g_string, t_string, instance):
-    global g
-    t = {}
-    bags = {}
-    g,n_v = parse_graph(g_string)
-    t, bags, tw = parse_tree(t_string)
-    #print(t)
-    root, t = make_rooted(t)
-    t, bags, root = make_nice(t,bags, root)
-    result = independent_set(t, bags, root) #_p for parallell
-    print(instance, "& $", n_v, "$ & $",tw, "$ & $", result[frozenset()], "$ \\\\ ")#c_table[root][0])
+#def calc_indep_set(grfile, tdfile):
+    
+
 
 if __name__ == "__main__":
         #to rep graph... all edges in a list? 
@@ -513,8 +493,8 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
     file_dir =  os.path.join(script_dir, "data")
     onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
-    grfiles = sorted(glob.glob(os.path.join(file_dir, "*.gr")))
-    tdfiles = sorted(glob.glob(os.path.join(file_dir, "*.td")))
+    grfiles = glob.glob(os.path.join(file_dir, "*.gr"))
+    tdfiles = glob.glob(os.path.join(file_dir, "*.td"))
     g_rel_path = "data/AhrensSzekeresGeneralizedQuadrangleGraph_3.gr"
     t_rel_path = "data/AhrensSzekeresGeneralizedQuadrangleGraph_3.td"
     g_string = os.path.join(script_dir, g_rel_path)
@@ -528,39 +508,30 @@ if __name__ == "__main__":
     files = list(zip(grfiles, tdfiles))
     del files[0]
     file_n = 0
-    global interrupted
     for g_string, t_string in files:
-        interrupted = False
-        #event = threading.Event()
         t = {} 
         bags = {}
         #note g should also reset but this is done in parse_graph
         #print(g_string, t_string)
         #g_string = files[1][0]
         #t_string = files[1][1]
-        #print(onlyfiles[file_n], onlyfiles[file_n+1])
-        
-        thread = Process(target=calc_indep_set, args=(g_string, t_string, onlyfiles[file_n].split('.')[0]))
+        print(onlyfiles[file_n], onlyfiles[file_n+1])
         file_n = file_n +2
-        #thread.setDaemon(True)
-        thread.start()
-        thread.join(timeout=60)
-        thread.terminate()
-        #event.set()
-        # g = parse_graph(g_string)
-        # parse_tree(t_string)
+        
+        g = parse_graph(g_string)
+        parse_tree(t_string)
     
-        # root, t = make_rooted(t)
-        # # print("bags:", bags)
-        # # print("tree:", t)
-        # t, bags, root = make_nice(t,bags, root)
-        # # print("Finished tree decomp")
-        # # #print("bags:", bags)
-        # # #print("tree:",t)
-        # result = independent_set(t, bags, root)
-        # print(result)
+        root, t = make_rooted(t)
+        # print("bags:", bags)
+        # print("tree:", t)
+        t, bags, root = make_nice(t,bags, root)
+        print("Finished tree decomp")
+        #print("bags:", bags)
+        #print("tree:",t)
+        result = independent_set(t, bags, root)
+        #print(result)
         global c_table
         #print(c_table)
-        # print(g_string, ":\t", result)#c_table[root][0])
+        print("Maximal indep set size: ", c_table[root][0])
 
     
