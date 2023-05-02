@@ -155,6 +155,8 @@ def rec_calc_c(t, bags, node):
                     c_table[node][S] = -float('inf')
                     s_table[node][S] = 0
                 #is sum over list inefficient?
+            del c_table[children[0]]
+            del c_table[children[1]]
             return c_table[node]
             #more efficient way?
             
@@ -185,6 +187,7 @@ def rec_calc_c(t, bags, node):
                 else:
                     c_table[node][S] = -float('inf')
                     s_table[node][S] = 0
+            del c_table[children[0]]
             return c_table[node]
         
         elif node_t == "introduce":
@@ -213,6 +216,7 @@ def rec_calc_c(t, bags, node):
                 else:
                     c_table[node][S] = -float('inf')
                     s_table[node][S] = 0
+            del c_table[children[0]]       
             return c_table[node]
 
 
@@ -466,6 +470,9 @@ def is_independent_set_v2(G, vertices):
                 return False 
     return True
 
+#def calc_indep_set(grfile, tdfile):
+    
+
 
 if __name__ == "__main__":
         #to rep graph... all edges in a list? 
@@ -500,6 +507,7 @@ if __name__ == "__main__":
     global g
     files = list(zip(grfiles, tdfiles))
     del files[0]
+    file_n = 0
     for g_string, t_string in files:
         t = {} 
         bags = {}
@@ -507,7 +515,8 @@ if __name__ == "__main__":
         #print(g_string, t_string)
         #g_string = files[1][0]
         #t_string = files[1][1]
-        print("entered loop")
+        print(onlyfiles[file_n], onlyfiles[file_n+1])
+        file_n = file_n +2
         
         g = parse_graph(g_string)
         parse_tree(t_string)
