@@ -33,7 +33,7 @@ def R(G):
             A.append(v)
     max_cut_value = sum([G[node][neigh][1] for node in A for neigh in range(len(G[node])) if not neigh in A]) 
     print(max_cut_value)
-    return A
+    return A, max_cut_value
 
 
 #print (R(G))
@@ -77,7 +77,7 @@ def S(G, A = set(), B = set()):
 
 
 def RS(G):
-    A = set(R(G))
+    A, _ = set(R(G))
     B = set(G.keys()) - A
     #print(A,B)
     max_cut = S(G, A, B)
@@ -87,4 +87,6 @@ print("R: ")
 R(G)
 print ("S: ", S(G))
 print("RS: ", RS(G))
+
+
 
