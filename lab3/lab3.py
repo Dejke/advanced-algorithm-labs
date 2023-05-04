@@ -1,37 +1,90 @@
-import os 
 import random
-DATAFOLDER = dir_path = os.path.dirname(os.path.realpath(__file__)) + "/data"
+from random import randint
+import os
+from os import listdir
+from os.path import isfile, join
 
-def read_file(path):
-    with open(path) as file:
-        E = [] # list of tuples (u,v,w) - (v1, v2, weight)
-        [n, m] = file.readline().split() # n = |V|, m = |E|
-        while line:=file.readline():
-            [u,v,w] = line.split()
-            E.append((int(u),int(v),int(w)))
-    return E,int(n),int(m)
+filepath = os.path.dirname(__file__)
+filepath = os.path.join(filepath, "data/pw09_100.9.txt")
+#file = open("c:/docs/cs/2Asuede/advanced algorithm/pw09_100.9.txt", "r")
+file = open(filepath, "r")
+lines = file.readlines()
+G = {}
 
-def R(E, n, m):
-    return [v for v in range(1,n+1) if random.randint(0,1) == 1]
+for i in range(1,len(lines)):
+    line=lines[i]
+    numbers = line.split()
+    n1=int(numbers[0])
+    n2=int(numbers[1])
+    w=int(numbers[2])
+    if n1 not in G :
+        G[n1] =[(n2,w)]
+    else :
+        G[n1].append((n2,w))
+    if n2 not in G :
+        G[n2] =[(n1,w)]
+    else :
+        G[n2].append((n1,w))
 
-def S(E, n, m):
-    A = [] # Let all vertices be outside of A to begin with
+def R(G):
+    A=[]
+    for v in G:
+        if randint(0,1)==1:
+            A.append(v)
+    max_cut_value = sum([G[node][neigh][1] for node in A for neigh in range(len(G[node])) if not neigh in A]) 
+    print(max_cut_value)
+    return A
 
-    for v in range(1,n+1):
-        pass
+
+#print (R(G))
 
 
-def RS(E, n, m):
-    pass
+def S(G, A = set(), B = set()):
+    
+    #A = set()
+    #B = set()
+    # Initialize all vertices as outside of set A
+    if(len(B) == 0):
+        for node in G:
+            B.add(node)
+    max_gain = 0
+    while True:
+        # Find the first vertex that increases the cut if swapped
+        swap_node = None
+        Bcopy = set(B)
+        for node in Bcopy:
+            gain = max_gain +sum([G[node][neigh][1] for neigh in range(len(G[node])) if G[node][neigh][0] in B]) -sum([G[node][neigh][1] for neigh in range(len(G[node])) if G[node][neigh][0] in A])
+            if gain > max_gain:
+                max_gain = gain
+                swap_node = node
+                B.remove(swap_node)
+                A.add(swap_node)
+        Acopy = set(A)
+        for node in Acopy:
+            gain = max_gain +sum([G[node][neigh][1] for neigh in range(len(G[node])) if G[node][neigh][0] in A]) -sum([G[node][neigh][1] for neigh in range(len(G[node])) if G[node][neigh][0] in B])
+            if gain > max_gain:
+                max_gain = gain
+                swap_node = node
+                A.remove(swap_node)
+                B.add(swap_node)        # Swap the selected vertex
+        # If no vertex increases the cut, terminate the algorithm
+        if swap_node is None:
+            break
+    # Calculate and return the maximum cut value
+    max_cut_value = sum([G[node][neigh][1] for node in A for neigh in range(len(G[node])) if G[node][neigh][0] in B]) 
+    return max_cut_value
 
-def main():
-    E, n, m = read_file(DATAFOLDER + "/matching_1000.txt")
-    E, n, m = read_file(DATAFOLDER + "/pw09_100.9.txt")
-    print(E)
-    print(n)
-    print(m) 
 
-    print(R(E,n,m))
 
-if __name__ == "__main__":
-    main()
+def RS(G):
+    A = set(R(G))
+    B = set(G.keys()) - A
+    #print(A,B)
+    max_cut = S(G, A, B)
+    return max_cut
+#
+print("R: ")
+R(G)
+print ("S: ", S(G))
+print("RS: ", RS(G))
+
