@@ -19,26 +19,30 @@ def R(E, n, m):
 
 def S(E, n, m):
     def swapped(A, v):
+        "Return a copy of a after swapping v"
         swapped_A = A.copy()
         if v in A:
             swapped_A.remove(v)
         else: 
             swapped_A.append(v)
         return swapped_A
-        
-    A = [] # Let all vertices be outside of A to begin with
 
-    while True:
+    def bestswap(A):
         cut_before = cut(A,E)
         candidates = list(range(1,n+1))
-        random.shuffle(candidates)
-        for v in candidates: # Maybe this should sample randomly, in that case just shuffle 
+        random.shuffle(candidates) # For random sampling
+        for v in candidates: 
             swapped_A = swapped(A,v)
             cut_after = cut(swapped_A,E)
             if cut_after > cut_before:
-                A = swapped_A
-                continue
-        break
+                #print(cut_after, cut_before)
+                return swapped_A, True
+        return A, False
+    
+    A = [] # Let all vertices be outside of A to begin with
+    loop = True
+    while(loop):
+        A, loop = bestswap(A)
     return A
 
 def RS(E, n, m):
@@ -54,19 +58,21 @@ def cut (A, E):# determine the size of the cut A over E
             tally += w
     return tally
 
-def plot_algo(E, n, m, algo):
+def plot_algo(E, n, m, algo, optimum):
     data = [cut(algo(E,n,m), E) for i in range(100)]
 
     print(data)
     counts, bins = np.histogram(np.array(data))
     print(counts, bins)
+    #bins = np.array([int(val) for val in bins])
     plt.stairs(counts, bins)
+    plt.pyplot.xlim(left=0,right=optimum)
     plt.show()
 
 def main():
     #E, n, m = read_file(DATAFOLDER + "/matching_1000.txt")
     E, n, m = read_file(DATAFOLDER + "/pw09_100.9.txt")
-    #plot_algo(E, n, m, R)
+    plot_algo(E, n, m, R, optimum = 13658)
     #print(cut(R(E,n,m), E))
     print(cut(S(E,n,m), E))
 if __name__ == "__main__":

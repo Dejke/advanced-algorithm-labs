@@ -100,6 +100,9 @@ def plot_algo(G, algo):
     plt.stairs(counts, bins)
     plt.show()
 
+    print ("average:", np.average(data))
+    print ("max: ", np.max(data))
+
 def main():
     print("R: ")
     R(G)
