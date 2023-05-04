@@ -466,7 +466,6 @@ def make_nice(t,bags,root):
     return t, bags, root
 
 def is_independent_set(G, vertices):
-   
     for v in vertices:
         if v not in G:
             return False  # v is not a vertex in G
@@ -492,7 +491,11 @@ def calc_indep_set(g_string, t_string, instance):
     root, t = make_rooted(t)
     t, bags, root = make_nice(t,bags, root)
     result = independent_set(t, bags, root) #_p for parallell
-    print(instance, "& $", n_v, "$ & $",tw, "$ & $", result[frozenset()], "$ \\\\ ")#c_table[root][0])
+    with open("./output.tex", "a") as outfile:
+        fixedname = instance.replace("_", "\\_")
+        output = f"{fixedname} & $ {n_v} $ & $ {tw} $ & $ {result[frozenset()]} $ \\\\\n" 
+        outfile.write(output)#c_table[root][0])
+        print(output, end='')
 
 if __name__ == "__main__":
         #to rep graph... all edges in a list? 
@@ -512,7 +515,7 @@ if __name__ == "__main__":
     #t_string = Path("BalancedTree_3_5.td")
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
     file_dir =  os.path.join(script_dir, "data")
-    onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
+    onlyfiles = sorted([f for f in listdir(file_dir) if isfile(join(file_dir, f))])
     grfiles = sorted(glob.glob(os.path.join(file_dir, "*.gr")))
     tdfiles = sorted(glob.glob(os.path.join(file_dir, "*.td")))
     g_rel_path = "data/AhrensSzekeresGeneralizedQuadrangleGraph_3.gr"
