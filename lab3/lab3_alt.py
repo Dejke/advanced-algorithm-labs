@@ -2,7 +2,6 @@ import os
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-#import pyplotlib
 DATAFOLDER = dir_path = os.path.dirname(os.path.realpath(__file__)) + "/data"
 
 def read_file(path):
@@ -14,28 +13,22 @@ def read_file(path):
             E.append((int(u),int(v),int(w)))
     return E,int(n),int(m)
 
-def R(E, n, m):
+def R(E, n):
     return [v for v in range(1,n+1) if random.randint(0,1) == 1]
 
-def S(E, n, m):
+def S(E, n, A = []):
     def swapped(A, v):
-        "Return a copy of a after swapping v"
-        swapped_A = A.copy()
         if v in A:
-            swapped_A.remove(v)
+            return [a for a in A if not a == v] # remove v
         else: 
-            swapped_A.append(v)
-        return swapped_A
-
+            return A + [v] # append v
     def bestswap(A):
         cut_before = cut(A,E)
         candidates = list(range(1,n+1))
-        random.shuffle(candidates) # For random sampling
         for v in candidates: 
             swapped_A = swapped(A,v)
             cut_after = cut(swapped_A,E)
             if cut_after > cut_before:
-                #print(cut_after, cut_before)
                 return swapped_A, True
         return A, False
     
@@ -45,8 +38,8 @@ def S(E, n, m):
         A, loop = bestswap(A)
     return A
 
-def RS(E, n, m):
-    pass
+def RS(E, n):
+    return S(E, n, A=R(E,n))
 
 def cut (A, E):# determine the size of the cut A over E
     tally = 0
