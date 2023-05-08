@@ -5,7 +5,7 @@ from os import listdir
 from os.path import isfile, join
 
 filepath = os.path.dirname(__file__)
-filepath = os.path.join(filepath, "data/pw09_100.9.txt")
+filepath = os.path.join(filepath, "data/matching_1000.txt")
 #file = open("c:/docs/cs/2Asuede/advanced algorithm/pw09_100.9.txt", "r")
 file = open(filepath, "r")
 lines = file.readlines()
