@@ -82,48 +82,64 @@ def R_wrapper(G):
     _, maxcut =  R(G)
     return maxcut
 
-def plot_algo(G, algo, optimal, ax):
-    data = [algo(G) for i in range(100)]
-    n, bins, patches = ax.hist(x=data, range=(0,optimal), bins=100) 
+def print_data(G, algo, filename):
+    with open(filename, "w") as file:
+        data = [algo(G) for _ in range(100)]
+        print ("\nfilename: "+filename)
+        print ("average: ", np.average(data))
+        print ("max: ", np.max(data))
+        data = [str(d) for d in data]
+        file.write('\n'.join(data))
 
-    print(algo)
+# def plot_algo(G, algo, optimal):
+#     data = [algo(G) for _ in range(100)]
+#     fig, ax = plt.subplots()
+#     n, bins, patches = ax.hist(x=data, range=(0,optimal), bins=100) 
 
-    # X ticks/labels trickery
-    ax.set_xbound(lower=0, upper=optimal)
-    ticks = ax.get_xticks()
-    ticks[-1] = optimal
-    ax.set_xticks(ticks)
-    labels = [label.get_text() for label in ax.get_xticklabels()]
-    labels[-1] = "OPT"
-    ax.set_xticklabels(labels)
-   
+#     print(algo)
 
-    print ("average:", np.average(data))
-    print ("max: ", np.max(data))
+#     # X ticks/labels trickery
+#     ax.set_xbound(lower=0, upper=optimal)
+#     ticks = ax.get_xticks()
+#     ticks[-1] = optimal
+#     ax.set_xticks(ticks)
+#     labels = [label.get_text() for label in ax.get_xticklabels()]
+#     labels[-1] = "OPT"
+#     ax.set_xticklabels(labels)
+#     plt.show()
+
+#     print ("average:", np.average(data))
+#     print ("max: ", np.max(data))
 
 def main():
-    
-    fig, ax = plt.subplots(3,2)
+    if not os.path.exists("./out"):
+        os.mkdir("./out")
     G = read_file(datapath + "pw09_100.9.txt")
-    plot_algo(G, R_wrapper, 13658, ax[0][0])
-    
-    G = read_file(datapath + "pw09_100.9.txt")
-    plot_algo(G, S, 13658, ax[1][0])
-    plot_algo(G, RS, 13658, ax[2][0])
+    print_data(G, RS, "./out/pw09_RS.txt")
+    print_data(G, S, "./out/pw09_S.txt")
+    print_data(G, R_wrapper, "./out/pw09_R.txt")
     
     G = read_file(datapath + "matching_1000.txt")
-    plot_algo(G, R_wrapper, 500, ax[0][1])
-    plot_algo(G, S, 500,ax[1][1])
-    plot_algo(G, RS, 500, ax[2][1])
-    #A, max_cut = R(G)
-    #fig.tight_layout() 
-    
-    ax[0][0].set_title("pw09_100.9")
-    ax[0][1].set_title("matching_1000")
 
-    ax[0][0].set_ylabel("R")
-    ax[1][0].set_ylabel("S")
-    ax[2][0].set_ylabel("RS")
+    print_data(G, S, "./out/matching_S.txt")
+    print_data(G, RS, "./out/matching_RS.txt")
+    print_data(G, R_wrapper, "./out/matching_R.txt")
+    # plot_algo(G, R_wrapper, 13658)
+    # plot_algo(G, S, 13658)
+    # plot_algo(G, RS, 13658)
+
+    
+    # plot_algo(G, R_wrapper, 500)
+    # plot_algo(G, S, 500)
+    # plot_algo(G, RS, 500)
+    # #fig.tight_layout() 
+    
+    # ax[0][0].set_title("pw09_100.9")
+    # ax[0][1].set_title("matching_1000")
+
+    # ax[0][0].set_ylabel("R")
+    # ax[1][0].set_ylabel("S")
+    # ax[2][0].set_ylabel("RS")
     
     plt.show()
     
