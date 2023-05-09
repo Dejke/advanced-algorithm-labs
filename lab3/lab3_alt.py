@@ -1,6 +1,5 @@
 import os 
 import random
-import matplotlib.pyplot as plt
 import numpy as np
 DATAFOLDER = dir_path = os.path.dirname(os.path.realpath(__file__)) + "/data"
 
@@ -21,52 +20,45 @@ def S(E, n, A = []):
         if v in A:
             return [a for a in A if not a == v] # remove v
         else: 
-            return A + [v] # append v
-    def bestswap(A):
-        cut_before = cut(A,E)
-        candidates = list(range(1,n+1))
-        for v in candidates: 
-            swapped_A = swapped(A,v)
-            cut_after = cut(swapped_A,E)
-            if cut_after > cut_before:
-                return swapped_A, True
-        return A, False
-    
-    A = [] # Let all vertices be outside of A to begin with
+            return A + [v] # append v 
     loop = True
     while(loop):
-        A, loop = bestswap(A)
+        cut_before = cut(A,E)
+        for v in range(1,n+1): 
+            swapped_A = swapped(A,v)
+            cut_after = cut(swapped_A,E)
+            loop = False
+            if cut_after > cut_before:
+                A = swapped_A
+                cut_before = cut_after
+                loop = True
     return A
 
 def RS(E, n):
     return S(E, n, A=R(E,n))
 
-def cut (A, E):# determine the size of the cut A over E
-    tally = 0
-    print(A)
-    for (u,v,w) in E:
-        A_u = u in A
-        A_v = v in A
-        if A_u != A_v: # part of the cut
-            tally += w
-    return tally
+def cut(A, E): # determine the size of the cut A over E
+    A = set(A) # faster lookups
+    return sum([w for (u,v,w) in E if (u in A) != (v in A)])
 
-def plot_algo(E, n, m, algo, optimum):
-    data = [cut(algo(E,n,m), E) for i in range(100)]
-
-    print(data)
-    counts, bins = np.histogram(np.array(data))
-    print(counts, bins)
-    #bins = np.array([int(val) for val in bins])
-    plt.stairs(counts, bins)
-    plt.pyplot.xlim(left=0,right=optimum)
-    plt.show()
+def printdata(E, n, algo):
+    data = [cut(algo(E,n), E) for _ in range(100)]
+    print()
+    print(algo)
+    print("Avg: ", np.average(data))
+    print("Max: ", np.max(data))
+    for d in data:
+        print(d)
 
 def main():
-    #E, n, m = read_file(DATAFOLDER + "/matching_1000.txt")
     E, n, m = read_file(DATAFOLDER + "/pw09_100.9.txt")
-    plot_algo(E, n, m, R, optimum = 13658)
-    #print(cut(R(E,n,m), E))
-    print(cut(S(E,n,m), E))
+    printdata(E, n, R)
+    printdata(E, n, S)
+    printdata(E, n, RS)
+    E, n, m = read_file(DATAFOLDER + "/matching_1000.txt")
+    printdata(E, n, R)
+    printdata(E, n, S)
+    printdata(E, n, RS)
+
 if __name__ == "__main__":
     main()
