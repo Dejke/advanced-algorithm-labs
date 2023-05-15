@@ -1,4 +1,3 @@
-import numpy as np
 import random
 from random import randint
 import os
@@ -13,19 +12,20 @@ def read_file(path):
         lines = file.readlines()
         G = {}
         line = lines[0]
-        numbers = line.split()
-        N, M, H, F, P = numbers
-        A = np.array(np.zeros(N,N))
-        b = np.array(np.zeros(N))
+        print (line)
+        [N, M, H, F, P] = [int(x) for x in line.split()]
+        print(N)
+        A = np.zeros(shape=(N,N))
+        b = np.zeros(N)
     
         for i in range(1,len(lines)):
             line=lines[i]
             numbers = line.split()
             n1=int(numbers[0])
             n2=int(numbers[1])
-            t=int(numbers[2])
-            p1 = int(numbers(3))
-            p2 = int(numbers(4))
+            t = float(numbers[2])
+            p1 = float(numbers[3])
+            p2 = float(numbers[4])
             A[n1,n2] = p1
             A[n2,n1] = p2
             b[n1] = b[n1] + t*p1
@@ -41,5 +41,15 @@ def read_file(path):
                 G[n2].append((n1,p2,t))
         return A, b, N, M, H, F, P
 
+def markov(A, b, N):
+    
+    return np.linalg.solve(A-np.identity(N), -b)
 
-#def markov(G, )
+def main():
+    A, b, N, M, H, F, P = read_file("./data/toy.in")
+    print(A)
+    print(b)
+    print(markov(A,b,N))
+
+if __name__:
+    main()
