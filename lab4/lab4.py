@@ -48,28 +48,46 @@ def read_file(path):
         return A, b, N, M, H, F, P, time_matrix
 
 def myread():
+    import pandas as pd 
+
     script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
     file_dir =  os.path.join(script_dir, "data")
     onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
     infiles = glob.glob(os.path.join(file_dir, "*.in"))
     ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
-    
+
+    results = []
     for file in infiles:
         A, b, N, M, H, F, P, G = read_file(file)
         
-        monte = monte_carlo()
+        #monte = monte_carlo()
         marko = markov(A,b,N)
+        if marko == "singular":
+            results.append([os.path.basename(file), "singular", "singular"])
+        else:   
+            results.append([os.path.basename(file), marko[F], marko[P]])
+    
+    table = pd.DataFrame(results, )
+    table = table.set_axis(["input graph", "$E[$FedUps$]$", "$E[$PostNHL$]$"], axis = 1)
+
+    print(table.to_latex(escape = False, index = False))
         
         
         
 def markov(A, b, N):
-    return np.linalg.solve(A-np.identity(N), -b)
-
+    try:
+        return np.linalg.solve(A-np.identity(N), -b)
+    except np.linalg.LinAlgError as err:
+        if 'Singular matrix' in str(err):
+            return "singular"
+        else:
+            raise
 def main():
-    A, b, N, M, H, F, P = read_file("./data/toy.in")
-    print(A)
-    print(b)
-    print(markov(A,b,N))
+    A, b, N, M, H, F, P, time_matrix = read_file("./data/toy.in")
+    myread()
+    #print(A)
+    #print(b)
+    #print(markov(A,b,N))
 
 if __name__:
     main()
