@@ -5,6 +5,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 import numpy as np
+import glob
 
 
 datapath = os.path.dirname(__file__) + "/data/"
@@ -39,7 +40,23 @@ def read_file(path):
                 G[n2] =[(n1,p2,t)]
             else :
                 G[n2].append((n1,p2,t))
-        return A, b, N, M, H, F, P
+        return A, b, N, M, H, F, P, G
+
+def myread():
+    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    file_dir =  os.path.join(script_dir, "data")
+    onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
+    infiles = glob.glob(os.path.join(file_dir, "*.in"))
+    ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
+    
+    for file in infiles:
+        A, b, N, M, H, F, P, G = read_file(file)
+        
+        monte = monte_carlo()
+        marko = markov(A,b)
+        
+        
+        
 
 
 #def markov(G, )
