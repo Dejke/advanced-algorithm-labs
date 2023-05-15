@@ -1,10 +1,10 @@
-import numpy as np
 import random
 from random import randint
 import os
 from os import listdir
 from os.path import isfile, join
 import numpy as np
+import glob
 
 
 datapath = os.path.dirname(__file__) + "/data/"
@@ -13,19 +13,22 @@ def read_file(path):
         lines = file.readlines()
         G = {}
         line = lines[0]
-        numbers = line.split()
-        N, M, H, F, P = numbers
-        A = np.array(np.zeros(N,N))
-        b = np.array(np.zeros(N))
+        print (line)
+        [N, M, H, F, P] = [int(x) for x in line.split()]
+        print(N)
+        A = np.zeros(shape=(N,N))
+        time_matrix = np.zeros(shape=(N,N))
+        b = np.zeros(N)
+        
     
         for i in range(1,len(lines)):
             line=lines[i]
             numbers = line.split()
             n1=int(numbers[0])
             n2=int(numbers[1])
-            t=int(numbers[2])
-            p1 = int(numbers(3))
-            p2 = int(numbers(4))
+            t = float(numbers[2])
+            p1 = float(numbers[3])
+            p2 = float(numbers[4])
             A[n1,n2] = p1
             A[n2,n1] = p2
             b[n1] = b[n1] + t*p1
@@ -41,10 +44,34 @@ def read_file(path):
                 G[n2] =[(n1,p2,t)]
             else :
                 G[n2].append((n1,p2,t))
+
         return A, b, N, M, H, F, P, time_matrix
 
+def myread():
+    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    file_dir =  os.path.join(script_dir, "data")
+    onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
+    infiles = glob.glob(os.path.join(file_dir, "*.in"))
+    ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
+    
+    for file in infiles:
+        A, b, N, M, H, F, P, time_matrix = read_file(file)
+        
+        monte = montecarlo(N,H,F,P, A, time_matrix)
 
-#def markov(G, )
+        marko = markov(A,b,N)
+        
+        
+        
+def markov(A, b, N):
+    return np.linalg.solve(A-np.identity(N), -b)
+
+def main():
+    #A, b, N, M, H, F, P = read_file("./data/toy.in")
+    #print(A)
+    #print(b)
+    #print(markov(A,b,N))
+    pass
 
 
 import random
@@ -62,6 +89,7 @@ def montecarlo(N,H,F,P, proba_matrix, time_matrix):
     time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix)
     return time_f, time_p 
 
-A, b, N, M, H, F, P = read_file(datapath)
-montecarlo(N,H,F,P, A, time_matrix)
 
+
+if __name__:
+    main()
