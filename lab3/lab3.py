@@ -4,7 +4,6 @@ import os
 from os import listdir
 from os.path import isfile, join
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 datapath = os.path.dirname(__file__) + "/data/"
@@ -91,26 +90,6 @@ def print_data(G, algo, filename):
         data = [str(d) for d in data]
         file.write('\n'.join(data))
 
-# def plot_algo(G, algo, optimal):
-#     data = [algo(G) for _ in range(100)]
-#     fig, ax = plt.subplots()
-#     n, bins, patches = ax.hist(x=data, range=(0,optimal), bins=100) 
-
-#     print(algo)
-
-#     # X ticks/labels trickery
-#     ax.set_xbound(lower=0, upper=optimal)
-#     ticks = ax.get_xticks()
-#     ticks[-1] = optimal
-#     ax.set_xticks(ticks)
-#     labels = [label.get_text() for label in ax.get_xticklabels()]
-#     labels[-1] = "OPT"
-#     ax.set_xticklabels(labels)
-#     plt.show()
-
-#     print ("average:", np.average(data))
-#     print ("max: ", np.max(data))
-
 def main():
     if not os.path.exists("./out"):
         os.mkdir("./out")
@@ -124,30 +103,8 @@ def main():
     print_data(G, S, "./out/matching_S.txt")
     print_data(G, RS, "./out/matching_RS.txt")
     print_data(G, R_wrapper, "./out/matching_R.txt")
-    # plot_algo(G, R_wrapper, 13658)
-    # plot_algo(G, S, 13658)
-    # plot_algo(G, RS, 13658)
-
-    
-    # plot_algo(G, R_wrapper, 500)
-    # plot_algo(G, S, 500)
-    # plot_algo(G, RS, 500)
-    # #fig.tight_layout() 
-    
-    # ax[0][0].set_title("pw09_100.9")
-    # ax[0][1].set_title("matching_1000")
-
-    # ax[0][0].set_ylabel("R")
-    # ax[1][0].set_ylabel("S")
-    # ax[2][0].set_ylabel("RS")
-    
-    plt.show()
-    
-
 
 if __name__ == "__main__": 
-    #G = read_file(datapath + "matching_1000.txt")
-    #print(S(G))
     main()
 
 
