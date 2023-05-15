@@ -5,6 +5,7 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 import glob
+import sys
 
 
 datapath = os.path.dirname(__file__) + "/data/"
@@ -13,9 +14,9 @@ def read_file(path):
         lines = file.readlines()
         G = {}
         line = lines[0]
-        print (line)
+        #print (line)
         [N, M, H, F, P] = [int(x) for x in line.split()]
-        print(N)
+        #print(N)
         A = np.zeros(shape=(N,N))
         time_matrix = np.zeros(shape=(N,N))
         b = np.zeros(N)
@@ -53,11 +54,11 @@ def myread():
     onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
     infiles = glob.glob(os.path.join(file_dir, "*.in"))
     ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
-    
+    print(len(infiles))
     for file in infiles:
         A, b, N, M, H, F, P, time_matrix = read_file(file)
-        
         monte = montecarlo(N,H,F,P, A, time_matrix)
+        print(monte)
 
         marko = markov(A,b,N)
         
@@ -66,30 +67,31 @@ def myread():
 def markov(A, b, N):
     return np.linalg.solve(A-np.identity(N), -b)
 
-def main():
-    #A, b, N, M, H, F, P = read_file("./data/toy.in")
-    #print(A)
-    #print(b)
-    #print(markov(A,b,N))
-    pass
+#def main():
+    A, b, N, M, H, F, P = read_file("./data/toy.in")
+    print(A)
+    print(b)
+    print(markov(A,b,N))
 
 
 import random
 
-def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time=0):
+def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
     if position == H:
         return time
     else :
-        chosen_option = random.choices([i for i in range(N) if proba_matrix[position][i]!=0], proba_matrix[position], k=1)
-        time += time_matrix[position][chosen_option] 
-        return montecarlo_rec(N, H,chosen_option, proba_matrix, time_matrix, time=0)
+        intersections = [i for i in range(N)]
+        probabilities = proba_matrix[position]
+        chosen_option = random.choices(intersections, probabilities, k=1)
+        time += time_matrix[position, chosen_option][0] 
+        return montecarlo_rec(N, H,chosen_option[0], proba_matrix, time_matrix, time)
     
 def montecarlo(N,H,F,P, proba_matrix, time_matrix):
-    time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix)
-    time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix)
+    time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix,0)
+    time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
     return time_f, time_p 
 
 
 
 if __name__:
-    main()
+    myread()
