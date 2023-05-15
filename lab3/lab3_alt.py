@@ -22,9 +22,12 @@ def S(E, n, A = []):
         else: 
             return A + [v] # append v 
     loop = True
+     
+    candidates = list(range(1,n+1)) # check out of set first
     while(loop):
+        random.shuffle(candidates)
         cut_before = cut(A,E)
-        for v in range(1,n+1): 
+        for v in candidates: 
             swapped_A = swapped(A,v)
             cut_after = cut(swapped_A,E)
             loop = False
@@ -32,6 +35,7 @@ def S(E, n, A = []):
                 A = swapped_A
                 cut_before = cut_after
                 loop = True
+                continue
     return A
 
 def RS(E, n):
@@ -47,8 +51,8 @@ def printdata(E, n, algo):
     print(algo)
     print("Avg: ", np.average(data))
     print("Max: ", np.max(data))
-    for d in data:
-        print(d)
+    #for d in data:
+    #    print(d)
 
 def main():
     E, n, m = read_file(DATAFOLDER + "/pw09_100.9.txt")
