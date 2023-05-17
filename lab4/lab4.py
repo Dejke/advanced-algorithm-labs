@@ -116,6 +116,12 @@ def check_same_subset(G, list_neigh,waiting_list):
             waiting_list.add(neigh[0])
     if waiting_list == set():
         return list_neigh
+    
+def reachable(G, H,T):
+    if T in check_same_subset(G,[H], set()):
+        return True
+    else :
+        return False
             
 
 
