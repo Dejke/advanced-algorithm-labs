@@ -108,5 +108,17 @@ def montecarlo(N,H,F,P, proba_matrix, time_matrix):
     time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
     return time_f, time_p 
 
+
+def check_same_subset(G, list_neigh,waiting_list):
+    h=waiting_list.pop()
+    for neigh in G[h]:
+        if neigh[0] not in list_neigh :
+            waiting_list.add(neigh[0])
+    if waiting_list == set():
+        return list_neigh
+            
+
+
+
 if __name__:
     experiments()
