@@ -9,7 +9,6 @@ import numpy as np
 import glob
 import sys
 
-
 datapath = os.path.dirname(__file__) + "/data/"
 def read_file(path):
     with open(path, "r") as file: 
@@ -22,7 +21,6 @@ def read_file(path):
         A = np.zeros(shape=(N,N))
         time_matrix = np.zeros(shape=(N,N))
         b = np.zeros(N)
-        
     
         for i in range(1,len(lines)):
             line=lines[i]
@@ -50,7 +48,6 @@ def read_file(path):
 
         return A, b, N, M, H, F, P, time_matrix
 
-
 def markov_experiments(infiles):
     results = []
     for file in infiles:
@@ -77,11 +74,6 @@ def get_subgraph(A, v):
     return subgraph
 
 def montecarlo_experiments(infiles):
-
-    # experiment 1
-    # run toy.in 10 000 times and check the runtime + accuracy
-
-
     for file in infiles:
         print()
         A, b, N, M, H, F, P, time_matrix = read_file(file)
@@ -104,14 +96,6 @@ def montecarlo_experiments(infiles):
             results_p.append(result_p)
         print("F: ", np.average(result_f))
         print("P: ", np.average(result_p))
-
-    return
-    
-
-    print("Monte carlo - experiment 1")
-    print("Fedups: ")
-    print(np.average())
-    print("PostNHL")
     
 def experiments():
     import pandas as pd 
@@ -122,15 +106,14 @@ def experiments():
     infiles = glob.glob(os.path.join(file_dir, "*.in"))
 
     #ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
-    markovresults = markov_experiments(infiles)
     montecarlo_experiments(infiles)
     
+    markovresults = markov_experiments(infiles)
     table = pd.DataFrame(markovresults)
     table = table.set_axis(["input graph", "$E[$FedUps$]$", "$E[$PostNHL$]$"], axis = 1)
 
     print(table.to_latex(escape = False, index = False))
 
-        
 def markov(A, b, N):
     try:
         return np.linalg.solve(A-np.identity(N), -b)
@@ -139,8 +122,6 @@ def markov(A, b, N):
             return "singular"
         else:
             raise
-
-import random
 
 def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
     if position == H:
@@ -157,7 +138,6 @@ def montecarlo(N, H, F, P, proba_matrix, time_matrix):
     time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
     return time_f, time_p 
 
-
 def check_same_subset(G, list_neigh,waiting_list):
     h=waiting_list.pop()
     for neigh in G[h]:
@@ -171,9 +151,6 @@ def reachable(G, H,T):
         return True
     else :
         return False
-            
-
-
 
 if __name__:
     experiments()
