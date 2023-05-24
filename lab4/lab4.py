@@ -102,11 +102,11 @@ def montecarlo_experiments(infiles):
         results_f = []
         results_p = []
         for i in range (100):
-            try:
-                result_f, result_p = montecarlo(N, H, F, P, A, time_matrix)
-            except: 
-                print("monte carlo reached recursion depth :(")
-                continue
+            #ry:
+            result_f, result_p = montecarlo(N, H, F, P, A, time_matrix)
+            #except: 
+            #    print("monte carlo reached recursion depth :(")
+            #    continue
             results_f.append(result_f)
             results_p.append(result_p)
         print("F: ", np.average(result_f))
@@ -132,6 +132,19 @@ def experiments():
 def markov(A, b, N):
     return np.linalg.solve(A-np.identity(N), -b)
 
+def montecarlo_loop(N, H, from_node, proba_matrix, time_matrix):
+    time = 0
+    node = from_node
+
+    while node != H:
+        intersections = [i for i in range(N)]
+        probabilities = proba_matrix[node]
+
+        nextnode = random.choices(intersections, probabilities, k=1)[0]
+        time += time_matrix[node, nextnode]
+        node = nextnode
+    return time
+
 def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
     if position == H:
         return time
@@ -143,8 +156,11 @@ def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
         return montecarlo_rec(N, H,chosen_option[0], proba_matrix, time_matrix, time)
     
 def montecarlo(N, H, F, P, proba_matrix, time_matrix):
-    time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix,0)
-    time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
+    stack = []
+#    time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix,0)
+#    time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
+    time_f = montecarlo_loop(N, H, F, proba_matrix, time_matrix)
+    time_p = montecarlo_loop(N, H, P, proba_matrix, time_matrix)
     return time_f, time_p 
 
 def check_same_subset(G, list_neigh,waiting_list):
