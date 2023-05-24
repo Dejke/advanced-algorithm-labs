@@ -10,7 +10,7 @@ import glob
 import sys
 import time
 
-sys.setrecursionlimit(4000)
+sys.setrecursionlimit(3000)
 
 datapath = os.path.dirname(__file__) + "/data/"
 def read_file(path):
@@ -102,11 +102,11 @@ def montecarlo_experiments(infiles):
         results_f = []
         results_p = []
         for i in range (100):
-            try:
-                result_f, result_p = montecarlo(N, H, F, P, A, time_matrix)
-            except: 
-                print("monte carlo reached recursion depth :(")
-                continue
+            #ry:
+            result_f, result_p = montecarlo(N, H, F, P, A, time_matrix)
+            #except: 
+            #    print("monte carlo reached recursion depth :(")
+            #    continue
             results_f.append(result_f)
             results_p.append(result_p)
         print("F: ", np.average(result_f))
@@ -163,6 +163,8 @@ def experiments():
                 
                 acc_F = dig_of_acc(toy_ans_F, monte_avg_f)
                 acc_P = dig_of_acc(toy_ans_P, monte_avg_p)
+                print("acc_F ", acc_F)
+                print("acc_P ", acc_P)
                 print("Number of significant digits for 10 000 runs: ", min(acc_F,acc_P))
             print("monte_avg_f, monte_avg_p: ", monte_avg_f, monte_avg_p)
             print("File: ", thisfile)
@@ -183,16 +185,13 @@ def experiments():
     print(table.to_latex(escape = False, index = False))
 
 def dig_of_acc(ans, est):        
-     acc = (ans-est)/ans
+     acc = abs((ans-est)/ans)
      lead = count_leading_zeroes(acc)
      return lead
 
     #up to 100 trailing
 def count_leading_zeroes(d):
-    for i in range(100):
-        j = 10**i
-        if d > 1/j:
-            return i
+    return int(np.ceil(-np.log10(d)))
 
 def get_sub_e(end, A, nodes):
     #print("getting subgraph starting in ", start)
@@ -220,6 +219,20 @@ def markov(A, b, N):
     return np.linalg.solve(A-np.identity(N), -b)
 
 
+def montecarlo_loop(N, H, from_node, proba_matrix, time_matrix):
+    time = 0
+    node = from_node
+
+    while node != H:
+        intersections = [i for i in range(N)]
+        probabilities = proba_matrix[node]
+
+        nextnode = random.choices(intersections, probabilities, k=1)[0]
+        time += time_matrix[node, nextnode]
+        node = nextnode
+    return time
+
+
 def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
     if position == H:
         return time
@@ -231,8 +244,11 @@ def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
         return montecarlo_rec(N, H,chosen_option[0], proba_matrix, time_matrix, time)
     
 def montecarlo(N, H, F, P, proba_matrix, time_matrix):
-    time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix,0)
-    time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
+    stack = []
+#    time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix,0)
+#    time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
+    time_f = montecarlo_loop(N, H, F, proba_matrix, time_matrix)
+    time_p = montecarlo_loop(N, H, P, proba_matrix, time_matrix)
     return time_f, time_p 
 
 def check_same_subset(G, list_neigh,waiting_list):
@@ -249,5 +265,13 @@ def reachable(G, H,T):
     else :
         return False
 
+
 if __name__ == "__main__":
+    
     experiments()
+    #sol_quality_small()
+
+
+
+
+    
