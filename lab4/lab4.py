@@ -8,6 +8,7 @@ from os.path import isfile, join
 import numpy as np
 import glob
 import sys
+import time
 
 sys.setrecursionlimit(4000)
 
@@ -162,3 +163,21 @@ def reachable(G, H,T):
 
 if __name__ == "__main__":
     experiments()
+
+
+def sol_quality_small(file=):
+    A, b, N, M, H, F, P, time_matrix = read_file(file)
+    start_time = time.time()
+    while consecutive_runs < 10:
+        result = markov(A,b,N)
+
+        if previous_result is not None and str(result)[:3] != str(previous_result)[:3]:
+            consecutive_runs = 0  
+        else:
+            consecutive_runs += 1
+        previous_result = result
+
+    if consecutive_runs == 10:
+        print("--- %s seconds ---" % (time.time() - start_time))
+
+    
