@@ -53,14 +53,26 @@ def markov_experiments(infiles):
     for file in infiles:
         thisfile = os.path.basename(file)
         A, b, N, M, H, F, P, time_matrix = read_file(file)
+        
+        subgraph =  get_subgraph(A,H) 
+
+        for i in set(range(N)) - subgraph:
+            A[i,:] = np.zeros(N)
+            #A[:,i] = np.zeros(N)
 
         marko = markov(A,b,N)
-        if marko == "singular":
-            results.append([os.path.basename(file), "singular", "singular"])
-        else:   
-            results.append([os.path.basename(file), marko[F], marko[P]])
-    return results
+        row = [thisfile]
 
+        if not F in subgraph:
+            row.append("unreachable")
+        else:   
+            row.append(marko[F])
+        if not P in subgraph:
+            row.append("unreachable")
+        else:   
+            row.append(marko[P])
+        results.append(row)
+    return results
 def get_subgraph(A, v):
     """Get the set of vertices that are connected to v in the transition matrix A"""
     AI = A + np.identity(len(A))
@@ -115,13 +127,7 @@ def experiments():
     print(table.to_latex(escape = False, index = False))
 
 def markov(A, b, N):
-    try:
-        return np.linalg.solve(A-np.identity(N), -b)
-    except np.linalg.LinAlgError as err:
-        if 'Singular matrix' in str(err):
-            return "singular"
-        else:
-            raise
+    return np.linalg.solve(A-np.identity(N), -b)
 
 def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
     if position == H:
@@ -152,5 +158,5 @@ def reachable(G, H,T):
     else :
         return False
 
-if __name__:
+if __name__ == "__main__":
     experiments()
