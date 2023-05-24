@@ -8,6 +8,7 @@ from os.path import isfile, join
 import numpy as np
 import glob
 import sys
+import time
 
 sys.setrecursionlimit(4000)
 
@@ -176,5 +177,38 @@ def reachable(G, H,T):
     else :
         return False
 
+def sol_quality_small():
+    script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+    file_dir =  os.path.join(script_dir, "data")
+    #onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
+    infiles = glob.glob(os.path.join(file_dir, "*.in"))
+    for i in range(len(infiles)) : 
+        if i==3 :
+            file = infiles[i]
+    A, b, N, M, H, F, P, time_matrix = read_file(file)
+    consecutive_runs = 0
+    previous_result_f=None
+    previous_result_P = None
+    start_time = time.time()
+    while consecutive_runs < 10:
+        result_f, result_p = montecarlo(N, H, F, P, A, time_matrix)
+
+        if previous_result_f is not None and str(result_f)[:3] != str(previous_result_f)[:3] and previous_result_p is not None and str(result_p)[:3] != str(previous_result_p)[:3]:
+            consecutive_runs = 0  
+        else:
+            consecutive_runs += 1
+        previous_result_f = result_f
+        previous_result_p = result_p
+
+    if consecutive_runs == 10:
+        print("--- %s seconds ---" % (time.time() - start_time))
+
 if __name__ == "__main__":
-    experiments()
+    
+    #experiments()
+    sol_quality_small()
+
+
+
+
+    
