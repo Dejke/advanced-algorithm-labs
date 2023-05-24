@@ -8,6 +8,7 @@ from os.path import isfile, join
 import numpy as np
 import glob
 import sys
+import time
 
 sys.setrecursionlimit(4000)
 
@@ -145,6 +146,26 @@ def experiments():
             print("No delivery ajaj")
             continue
         try:
+            if thisfile == "toy.in":
+                monte_avg_f, monte_avg_p = 0,0
+                toy_ans_F = 18.2727272727
+                toy_ans_P = 25.5454545455
+                start = time.time()
+                                
+                
+                for i in range(10000):
+                    monte_f, monte_p = montecarlo(N,H,F,P, A, time_matrix)
+                    monte_avg_f += monte_f
+                    monte_avg_p += monte_p
+                monte_avg_f, monte_avg_p = monte_avg_f/10000, monte_avg_p/10000
+                end = time.time()
+                print("Elapsed time for 10 000 runs: ", end - start)
+                
+                acc_F = dig_of_acc(toy_ans_F, monte_avg_f)
+                acc_P = dig_of_acc(toy_ans_P, monte_avg_p)
+                print("Number of significant digits for 10 000 runs: ", min(acc_F,acc_P))
+            print("monte_avg_f, monte_avg_p: ", monte_avg_f, monte_avg_p)
+            print("File: ", thisfile)
             monte_f, monte_p = montecarlo(N,H,F,P, A, time_matrix)
             print("FedUps", monte_f)
             print("PostNHL", monte_p)
@@ -161,7 +182,17 @@ def experiments():
 
     print(table.to_latex(escape = False, index = False))
 
+def dig_of_acc(ans, est):        
+     acc = (ans-est)/ans
+     lead = count_leading_zeroes(acc)
+     return lead
 
+    #up to 100 trailing
+def count_leading_zeroes(d):
+    for i in range(100):
+        j = 10**i
+        if d > 1/j:
+            return i
 
 def get_sub_e(end, A, nodes):
     #print("getting subgraph starting in ", start)
