@@ -10,7 +10,7 @@ import glob
 import sys
 import time
 
-sys.setrecursionlimit(4000)
+sys.setrecursionlimit(3000)
 
 datapath = os.path.dirname(__file__) + "/data/"
 def read_file(path):
