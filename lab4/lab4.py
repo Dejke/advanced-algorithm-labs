@@ -63,7 +63,24 @@ def experiments():
         print("\t Monte Carlo - ", thisfile)
         
         A, b, N, M, H, F, P, time_matrix = read_file(file)
-        
+        nodes = set()
+        print("A= ", A)
+        print("H= ", H)
+        #nodes_F = get_sub(F, A, nodes)
+        #nodes_P = get_sub(P, A, nodes)
+        nodes = {H}
+        nodes = get_sub_e(H,A,nodes)
+        #print("Subgraph from F: ", nodes_F)
+        #print("Subgraph from P: ", nodes_P)
+        #print("Subgraph to H ", nodes_H)
+        if F not in nodes or P not in nodes:
+            if F not in nodes:
+                print("No delivery from F")
+            if P not in nodes:
+                print("no delivery from P")
+            print("Alen", len(A))
+            print("No delivery ajaj")
+            continue
         try:
             monte_f, monte_p = montecarlo(N,H,F,P, A, time_matrix)
             print("FedUps", monte_f)
@@ -81,13 +98,34 @@ def experiments():
 
     print(table.to_latex(escape = False, index = False))
 
+
+def get_sub_e(end, A, nodes):
+    #print("getting subgraph starting in ", start)
+    for i in range(len(A)):
+        #print(A[start][i])
+        if A[i][end] > 0 and i not in nodes:
+            nodes.add(i)
+            nodes = get_sub(i, A, nodes)
+            #print(nodes)
+    return nodes
+
+def get_sub(start, A, nodes):
+    #print("getting subgraph starting in ", start)
+    for i in range(len(A)):
+        #print(A[start][i])
+        if A[start][i] > 0 and i not in nodes:
+            nodes.add(i)
+            nodes = get_sub(i, A, nodes)
+            #print(nodes)
+    return nodes
+    
         
 def markov(A, b, N):
     try:
         return np.linalg.solve(A-np.identity(N), -b)
     except np.linalg.LinAlgError as err:
         if 'Singular matrix' in str(err):
-            return "singular"
+            return "We tried to deliver your package, but you were not at home"
         else:
             raise
 
