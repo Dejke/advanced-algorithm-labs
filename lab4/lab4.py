@@ -9,6 +9,8 @@ import numpy as np
 import glob
 import sys
 
+sys.setrecursionlimit(4000)
+
 datapath = os.path.dirname(__file__) + "/data/"
 def read_file(path):
     with open(path, "r") as file: 
