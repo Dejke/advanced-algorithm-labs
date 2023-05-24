@@ -150,11 +150,7 @@ def experiments():
             print("PostNHL", monte_p)
         except:
             pass
-        marko = markov(A,b,N)
-        if marko == "singular":
-            results.append([os.path.basename(file), "singular", "singular"])
-        else:   
-            results.append([os.path.basename(file), marko[F], marko[P]])
+        
     #ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
     montecarlo_experiments(infiles)
 
