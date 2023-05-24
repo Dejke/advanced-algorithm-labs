@@ -1,3 +1,5 @@
+#https://www.overleaf.com/project/6464b9e359b4ce0ab0a419e6
+
 import random
 from random import randint
 import os
@@ -7,6 +9,7 @@ import numpy as np
 import glob
 import sys
 
+sys.setrecursionlimit(4000)
 
 datapath = os.path.dirname(__file__) + "/data/"
 def read_file(path):
@@ -20,7 +23,6 @@ def read_file(path):
         A = np.zeros(shape=(N,N))
         time_matrix = np.zeros(shape=(N,N))
         b = np.zeros(N)
-        
     
         for i in range(1,len(lines)):
             line=lines[i]
@@ -48,6 +50,55 @@ def read_file(path):
 
         return A, b, N, M, H, F, P, time_matrix
 
+def markov_experiments(infiles):
+    results = []
+    for file in infiles:
+        thisfile = os.path.basename(file)
+        A, b, N, M, H, F, P, time_matrix = read_file(file)
+
+        marko = markov(A,b,N)
+        if marko == "singular":
+            results.append([os.path.basename(file), "singular", "singular"])
+        else:   
+            results.append([os.path.basename(file), marko[F], marko[P]])
+    return results
+
+def get_subgraph(A, v):
+    """Get the set of vertices that are connected to v in the transition matrix A"""
+    AI = A + np.identity(len(A))
+    subgraph = {v}
+    last = set()
+    while subgraph != last:
+        last = subgraph
+        probs = AI[:, list(subgraph)]
+        subgraph = set(np.nonzero(probs.sum(axis = 1).T)[0].flatten())
+
+    return subgraph
+
+def montecarlo_experiments(infiles):
+    for file in infiles:
+        print()
+        A, b, N, M, H, F, P, time_matrix = read_file(file)
+        subgraph = get_subgraph(A,H)
+        if not {F, P}.issubset(subgraph): # If both are not in grpah
+            print(f"F or P can't reach H in graph {os.path.basename(file)}!")
+            print()
+            continue
+
+        print(f"{os.path.basename(file)} (100 runs avg):")
+        results_f = []
+        results_p = []
+        for i in range (100):
+            try:
+                result_f, result_p = montecarlo(N, H, F, P, A, time_matrix)
+            except: 
+                print("monte carlo reached recursion depth :(")
+                continue
+            results_f.append(result_f)
+            results_p.append(result_p)
+        print("F: ", np.average(result_f))
+        print("P: ", np.average(result_p))
+    
 def experiments():
     import pandas as pd 
 
@@ -55,7 +106,7 @@ def experiments():
     file_dir =  os.path.join(script_dir, "data")
     #onlyfiles = [f for f in listdir(file_dir) if isfile(join(file_dir, f))]
     infiles = glob.glob(os.path.join(file_dir, "*.in"))
-    #ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
+
 
     results = []
     for file in infiles:
@@ -92,11 +143,16 @@ def experiments():
             results.append([os.path.basename(file), "singular", "singular"])
         else:   
             results.append([os.path.basename(file), marko[F], marko[P]])
+    #ansfiles = glob.glob(os.path.join(file_dir, "*.ans"))
+    montecarlo_experiments(infiles)
+
     
-    table = pd.DataFrame(results)
+    markovresults = markov_experiments(infiles)
+    table = pd.DataFrame(markovresults)
     table = table.set_axis(["input graph", "$E[$FedUps$]$", "$E[$PostNHL$]$"], axis = 1)
 
     print(table.to_latex(escape = False, index = False))
+
 
 
 def get_sub_e(end, A, nodes):
@@ -119,7 +175,7 @@ def get_sub(start, A, nodes):
             #print(nodes)
     return nodes
     
-        
+
 def markov(A, b, N):
     try:
         return np.linalg.solve(A-np.identity(N), -b)
@@ -129,22 +185,34 @@ def markov(A, b, N):
         else:
             raise
 
-import random
-
 def montecarlo_rec(N,H,position, proba_matrix, time_matrix, time):
     if position == H:
         return time
-    else :
+    else:
         intersections = [i for i in range(N)]
         probabilities = proba_matrix[position]
         chosen_option = random.choices(intersections, probabilities, k=1)
         time += time_matrix[position, chosen_option][0] 
         return montecarlo_rec(N, H,chosen_option[0], proba_matrix, time_matrix, time)
     
-def montecarlo(N,H,F,P, proba_matrix, time_matrix):
+def montecarlo(N, H, F, P, proba_matrix, time_matrix):
     time_f = montecarlo_rec(N,H,F, proba_matrix, time_matrix,0)
     time_p = montecarlo_rec(N,H,P, proba_matrix, time_matrix,0)
     return time_f, time_p 
+
+def check_same_subset(G, list_neigh,waiting_list):
+    h=waiting_list.pop()
+    for neigh in G[h]:
+        if neigh[0] not in list_neigh :
+            waiting_list.add(neigh[0])
+    if waiting_list == set():
+        return list_neigh
+    
+def reachable(G, H,T):
+    if T in check_same_subset(G,[H], set()):
+        return True
+    else :
+        return False
 
 if __name__:
     experiments()
